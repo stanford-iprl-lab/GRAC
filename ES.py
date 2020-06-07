@@ -34,7 +34,7 @@ class CEM:
 		self.damp_limit = damp_limit
 		self.tau = 0.95
 		self.cov = self.sigma * torch.ones([self.batch_size, self.num_params], device=device)
-		self.clip = clip
+		self.clip = clip 
 		
 		# elite stuff
 		self.elitism = elitism
@@ -120,7 +120,7 @@ class Searcher():
 	def search(self, state, action_init, critic, batch_size=None, n_iter=2, action_bound=True):
 		if batch_size is None:
 			batch_size = self.batch_size
-		cem = CEM(self.action_dim, action_init, batch_size, self.sigma_init, self.clip, self.pop_size, self.damp, self.damp_limit, self.parents, device=self.device)
+		cem = CEM(self.action_dim, action_init, batch_size, self.sigma_init, self.clip * self.max_action, self.pop_size, self.damp, self.damp_limit, self.parents, device=self.device)
 		with torch.no_grad():
 			for iter in range(n_iter):
 				actions = cem.ask(self.pop_size)
