@@ -137,7 +137,7 @@ class GRAC(GRAC_base):
 		self.actor_lr_start = ACTOR_LR_START[env]
 
 		ACTOR_LR_END = {
- 			'Ant-v2': 1e-4,
+ 			'Ant-v2': 3e-4,
 			'Humanoid-v2': 2e-4,
                         'HalfCheetah-v2': 3e-4,
                         'Hopper-v2': 3e-4,
@@ -177,7 +177,7 @@ class GRAC(GRAC_base):
 		self.max_timesteps = MAX_TIMESTEPS[env]
 
 		MAX_ITER_STEPS = {
-                        'Ant-v2': 20,
+                        'Ant-v2': 10,
                         'Humanoid-v2': 20,
                         'HalfCheetah-v2': 50,
                         'Hopper-v2': 20,
@@ -185,7 +185,7 @@ class GRAC(GRAC_base):
                         'Walker2d-v2': 20,
 		}
 
-		self.max_iter_steps = MAX_ITER_STEPS[env]
+		self.max_iter_steps = n_repeat#MAX_ITER_STEPS[env]
 
 		CEM_LOSS_COEF = {
                         'Ant-v2': 1./float(self.action_dim),
