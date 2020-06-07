@@ -50,7 +50,9 @@ if __name__ == "__main__":
 	parser.add_argument("--policy_freq", default=2, type=int)       # Frequency of delayed policy updates
 	parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
-	parser.add_argument('--n_repeat', default=1, type=int)
+	parser.add_argument('--n_repeat', default=20, type=int)
+	parser.add_argument('--alpha_start', default=0.7)
+	parser.add_argument('--alpha_end', default=0.85)
 	parser.add_argument('--no_critic_cem', action="store_true")
 	parser.add_argument('--actor_cem_clip', default=0.5)
 	parser.add_argument('--use_expl_noise', action="store_true")
@@ -107,6 +109,8 @@ if __name__ == "__main__":
 		"discount": args.discount,
 		"tau": args.tau,
 		"n_repeat": args.n_repeat,
+		"alpha_start": args.alpha_start,
+		"alpha_end":args.alpha_end,
 		"no_critic_cem": args.no_critic_cem,
 		"device": device,
 	}

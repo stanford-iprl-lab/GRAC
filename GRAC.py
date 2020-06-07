@@ -108,6 +108,8 @@ class GRAC(GRAC_base):
 		noise_clip=0.5,
 		policy_freq=2,
 		n_repeat=1,
+		alpha_start=0.7,
+        alpha_end=0.85,
 		no_critic_cem=False,
 		device=torch.device('cuda'),
 	):
@@ -154,7 +156,7 @@ class GRAC(GRAC_base):
                         'Swimmer-v2': 0.5,
                         'Walker2d-v2': 0.85,
 		}
-		self.third_loss_bound = THIRD_LOSS_BOUND[env]
+		self.third_loss_bound = alpha_start#THIRD_LOSS_BOUND[env]
 
 		THIRD_LOSS_BOUND_END = {
                         'Ant-v2': 0.85,
@@ -164,7 +166,7 @@ class GRAC(GRAC_base):
                         'Swimmer-v2': 0.75,
                         'Walker2d-v2': 0.95,
 		}
-		self.third_loss_bound_end = THIRD_LOSS_BOUND_END[env]
+		self.third_loss_bound_end = alpha_end#THIRD_LOSS_BOUND_END[env]
 	
 		MAX_TIMESTEPS = {
                         'Ant-v2': 3e6,
