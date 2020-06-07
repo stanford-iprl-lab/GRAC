@@ -126,7 +126,8 @@ class Searcher():
 				actions = cem.ask(self.pop_size)
 				if action_bound:
 					actions = actions.clamp(-self.max_action, self.max_action)
-				Qs = critic(state.unsqueeze(1).repeat(1, self.pop_size, 1), actions)
+				actions_temp = actions.clone().view( self.pop_size * batch_size, -1)
+				Qs = critic(state.unsqueeze(1).repeat(1, self.pop_size, 1).view(self.pop_size * batch_size,-1), actions_temp).view(batch_size,self.pop_size)
 				best_action = cem.tell(actions, Qs)
 				if iter == n_iter - 1:
 					best_Q = critic(state, best_action)
