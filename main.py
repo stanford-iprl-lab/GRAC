@@ -51,8 +51,8 @@ if __name__ == "__main__":
 	parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 	parser.add_argument('--n_repeat', default=20, type=int)
-	parser.add_argument('--alpha_start', default=0.7)
-	parser.add_argument('--alpha_end', default=0.85)
+	parser.add_argument('--alpha_start', default=0.7,type=float)
+	parser.add_argument('--alpha_end', default=0.85,type=float)
 	parser.add_argument('--no_critic_cem', action="store_true")
 	parser.add_argument('--actor_cem_clip', default=0.5)
 	parser.add_argument('--use_expl_noise', action="store_true")
@@ -142,6 +142,8 @@ if __name__ == "__main__":
 	episode_timesteps = 0
 	episode_num = 0
 
+	reward_min = 0
+	reward_max = 0
 	# writer = utils.WriterLoggerWrapper(result_folder, comment=file_name, max_timesteps=args.max_timesteps)
 	writer = SummaryWriter(log_dir=result_folder, comment=file_name)
 
@@ -173,6 +175,10 @@ if __name__ == "__main__":
 		writer.add_scalar('test/reward', reward, t+1)
 		done_bool = float(done) if episode_timesteps < env._max_episode_steps else 0
 
+		if t < args.start_timesteps:
+			reward_min = min(reward, reward_min)
+			reward_max = max(reward, reward_max)
+
 		# Store data in replay buffer
 		replay_buffer.add(state, action, next_state, reward, done_bool)
 
@@ -181,7 +187,7 @@ if __name__ == "__main__":
 
 		# Train agent after collecting sufficient data
 		if t >= args.start_timesteps:
-			policy.train(replay_buffer, args.batch_size, writer)
+			policy.train(replay_buffer, args.batch_size, writer, reward_max - reward_min)
 
 		if done: 
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True

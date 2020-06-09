@@ -47,8 +47,8 @@ class CEM:
 			self.parents = pop_size // 2
 		else:
 			self.parents = parents
-		self.weights = torch.tensor([np.log((self.parents + 1) / i)
-								 for i in range(1, self.parents + 1)], device=device)
+		self.weights = torch.FloatTensor([np.log((self.parents + 1) / i)
+								 for i in range(1, self.parents + 1)]).to(device)
 		self.weights /= self.weights.sum()
 
 	def ask(self, pop_size):

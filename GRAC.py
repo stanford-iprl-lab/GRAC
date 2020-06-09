@@ -141,10 +141,10 @@ class GRAC(GRAC_base):
 		ACTOR_LR_END = {
  			'Ant-v2': 3e-4,
 			'Humanoid-v2': 2e-4,
-                        'HalfCheetah-v2': 3e-4,
-                        'Hopper-v2': 3e-4,
-                        'Swimmer-v2': 3e-4,
-                        'Walker2d-v2': 3e-4,
+            'HalfCheetah-v2': 3e-4,
+            'Hopper-v2': 3e-4,
+            'Swimmer-v2': 3e-4,
+            'Walker2d-v2': 0.5e-4,
 		}
 		self.actor_lr_end = ACTOR_LR_END[env]
 
@@ -195,7 +195,7 @@ class GRAC(GRAC_base):
                         'HalfCheetah-v2': 1./float(self.action_dim),
                         'Hopper-v2': 0.3/float(self.action_dim),
                         'Swimmer-v2': 1./float(self.action_dim),
-                        'Walker2d-v2': 0.3/float(self.action_dim),
+                        'Walker2d-v2': 1.0/float(self.action_dim),
 		}
 		self.cem_loss_coef = CEM_LOSS_COEF[env]
 
@@ -238,7 +238,7 @@ class GRAC(GRAC_base):
 	def update_critic(self, critic_loss):
 		super().update_critic(critic_loss)
 
-	def train(self, replay_buffer, batch_size=100, writer=None):
+	def train(self, replay_buffer, batch_size=100, writer=None, reward_range=20.0):
 		self.total_it += 1
 		log_it = (self.total_it % self.log_freq == 0)
 		# Sample replay buffer 
@@ -327,7 +327,7 @@ class GRAC(GRAC_base):
 		self.update_critic(critic_loss3)
 		prev_prev_critic_loss3 = critic_loss3.clone() * 1.0 
 		prev_critic_loss3 = critic_loss3.clone()
-		init_critic_loss3 = critic_loss3.clone()
+		init_critic_loss3 = critic_loss.clone()
 		ratio = 0.0
 		max_step = 0
 		writer.add_scalar('train_critic/third_violation_max_loss3_init',torch.max(loss3_max_init), self.total_it)
@@ -386,8 +386,9 @@ class GRAC(GRAC_base):
 			log_prob_better_action = m.log_prob(better_action)
 
 			adv = (q_better_action - q_actor_action).detach()
-			cem_loss = log_prob_better_action * torch.min(self.adv_bound * torch.ones_like(adv),adv)
-			actor_loss = -(cem_loss *self.cem_loss_coef + q_actor_action).mean()
+			#self.adv_bound = reward_range
+			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
+			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action).mean()
 
 			# Optimize the actor 
 			Q_before_update = self.critic.Q1(state, actor_action)
