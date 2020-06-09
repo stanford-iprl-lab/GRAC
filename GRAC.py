@@ -199,16 +199,6 @@ class GRAC(GRAC_base):
 		}
 		self.cem_loss_coef = CEM_LOSS_COEF[env]
 
-		ADV_BOUND = {
-	                'Ant-v2': 20.0,
-                        'Humanoid-v2': 20.0,
-                        'HalfCheetah-v2': 20.0,
-                        'Hopper-v2': 5.0,
-                        'Swimmer-v2': 20.0,
-                        'Walker2d-v2': 5.0,
-		}
-		self.adv_bound = ADV_BOUND[env]
-
 
 	def select_action(self, state, writer=None, test=False):
 		state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
@@ -386,7 +376,6 @@ class GRAC(GRAC_base):
 			log_prob_better_action = m.log_prob(better_action)
 
 			adv = (q_better_action - q_actor_action).detach()
-			#self.adv_bound = reward_range
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
 			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action).mean()
 
