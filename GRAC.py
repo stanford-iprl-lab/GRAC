@@ -139,11 +139,11 @@ class GRAC(GRAC_base):
 		self.actor_lr_start = ACTOR_LR_START[env]
 
 		ACTOR_LR_END = {
- 			'Ant-v2': 3e-4,
-			'Humanoid-v2': 2e-4,
-            'HalfCheetah-v2': 3e-4,
-            'Hopper-v2': 3e-4,
-            'Swimmer-v2': 3e-4,
+ 			'Ant-v2': 0.5e-4,
+			'Humanoid-v2': 0.5e-4,
+            'HalfCheetah-v2': 0.5e-4,
+            'Hopper-v2': 0.5e-4,
+            'Swimmer-v2': 0.5e-4,
             'Walker2d-v2': 0.5e-4,
 		}
 		self.actor_lr_end = ACTOR_LR_END[env]
