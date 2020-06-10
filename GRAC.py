@@ -188,16 +188,7 @@ class GRAC(GRAC_base):
 		}
 
 		self.max_iter_steps = n_repeat#MAX_ITER_STEPS[env]
-
-		CEM_LOSS_COEF = {
-                        'Ant-v2': 1./float(self.action_dim),
-                        'Humanoid-v2': 1./float(self.action_dim),
-                        'HalfCheetah-v2': 1./float(self.action_dim),
-                        'Hopper-v2': 1.0/float(self.action_dim),
-                        'Swimmer-v2': 1./float(self.action_dim),
-                        'Walker2d-v2': 1.0/float(self.action_dim),
-		}
-		self.cem_loss_coef = CEM_LOSS_COEF[env]
+		self.cem_loss_coef = 1.0/float(self.action_dim)
 
 
 	def select_action(self, state, writer=None, test=False):
