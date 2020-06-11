@@ -117,7 +117,7 @@ class GRAC(GRAC_base):
 
 		self.actor = Actor(state_dim, action_dim, max_action).to(device)
 		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=2e-4)
-	        self.actor_lr = 2e-4
+		self.actor_lr = 2e-4
 
 		self.critic = Critic(state_dim, action_dim).to(device)
 		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=3e-4)
