@@ -142,9 +142,9 @@ class GRAC(GRAC_base):
  			'Ant-v2': 0.5e-4,
 			'Humanoid-v2': 0.5e-4,
             'HalfCheetah-v2': 0.5e-4,
-            'Hopper-v2': 0.5e-4,
+            'Hopper-v2': 3e-4,
             'Swimmer-v2': 0.5e-4,
-            'Walker2d-v2': 0.5e-4,
+            'Walker2d-v2': 3e-4,
 		}
 		self.actor_lr_end = ACTOR_LR_END[env]
 
@@ -188,7 +188,7 @@ class GRAC(GRAC_base):
 		}
 
 		self.max_iter_steps = n_repeat#MAX_ITER_STEPS[env]
-		self.cem_loss_coef = 1.0/float(self.action_dim)
+		self.cem_loss_coef = 0.1/float(self.action_dim)
 
 
 	def select_action(self, state, writer=None, test=False):
@@ -368,6 +368,9 @@ class GRAC(GRAC_base):
 
 			adv = (q_better_action - q_actor_action).detach()
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
+			self.cem_loss_coef = 0.1/float(self.action_dim)*(1-float(self.total_it) / float(self.max_timesteps))
+			if log_it:
+				writer.add_scalar('train_actor/cem_loss_ceof', self.cem_loss_coef, self.total_it)
 			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action).mean()
 
 			# Optimize the actor 
