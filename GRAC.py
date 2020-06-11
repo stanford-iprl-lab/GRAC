@@ -116,8 +116,8 @@ class GRAC(GRAC_base):
 		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, noise_clip, policy_freq, device)
 
 		self.actor = Actor(state_dim, action_dim, max_action).to(device)
-		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=3e-4)
-		self.actor_lr = 3e-4
+		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=2e-4)
+	        self.actor_lr = 2e-4
 
 		self.critic = Critic(state_dim, action_dim).to(device)
 		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=3e-4)
@@ -188,7 +188,7 @@ class GRAC(GRAC_base):
 		}
 
 		self.max_iter_steps = n_repeat#MAX_ITER_STEPS[env]
-		self.cem_loss_coef = 0.1/float(self.action_dim)
+		self.cem_loss_coef = 1.0/float(self.action_dim)
 
 
 	def select_action(self, state, writer=None, test=False):
