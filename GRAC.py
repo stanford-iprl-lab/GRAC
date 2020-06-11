@@ -129,22 +129,22 @@ class GRAC(GRAC_base):
 		self.log_freq = 200
 	
 		ACTOR_LR_START = {
-			'Ant-v2': 3e-4,
-			'Humanoid-v2': 3e-4,
-            'HalfCheetah-v2': 3e-4,
-            'Hopper-v2': 3e-4,
-            'Swimmer-v2': 3e-4,
-            'Walker2d-v2': 3e-4,
+			'Ant-v2': 2e-4,
+			'Humanoid-v2': 2e-4,
+            'HalfCheetah-v2': 2e-4,
+            'Hopper-v2': 2e-4,
+            'Swimmer-v2': 2e-4,
+            'Walker2d-v2': 2e-4,
 		}
 		self.actor_lr_start = ACTOR_LR_START[env]
 
 		ACTOR_LR_END = {
- 			'Ant-v2': 0.5e-4,
-			'Humanoid-v2': 0.5e-4,
-            'HalfCheetah-v2': 0.5e-4,
-            'Hopper-v2': 3e-4,
-            'Swimmer-v2': 0.5e-4,
-            'Walker2d-v2': 3e-4,
+ 			'Ant-v2': 2e-4,
+			'Humanoid-v2': 2e-4,
+            'HalfCheetah-v2': 2e-4,
+            'Hopper-v2': 2e-4,
+            'Swimmer-v2': 2e-4,
+            'Walker2d-v2': 2e-4,
 		}
 		self.actor_lr_end = ACTOR_LR_END[env]
 
@@ -352,7 +352,6 @@ class GRAC(GRAC_base):
 
 		critic_loss = F.mse_loss(current_Q1, target_Q_final) + F.mse_loss(current_Q2, target_Q_final)
 	
-		self.actor_lr = self.actor_lr_start + float(self.total_it) / float(self.max_timesteps) * (self.actor_lr_end - self.actor_lr_start)
 		if self.total_it % 1 == 0:
 			lr_tmp = self.actor_lr / (float(critic_loss)+1.0)
 			self.actor_optimizer = self.lr_scheduler(self.actor_optimizer, lr_tmp)
@@ -368,7 +367,6 @@ class GRAC(GRAC_base):
 
 			adv = (q_better_action - q_actor_action).detach()
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
-			self.cem_loss_coef = 0.1/float(self.action_dim)*(1-float(self.total_it) / float(self.max_timesteps))
 			if log_it:
 				writer.add_scalar('train_actor/cem_loss_ceof', self.cem_loss_coef, self.total_it)
 			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action).mean()
