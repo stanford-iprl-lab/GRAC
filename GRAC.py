@@ -156,17 +156,17 @@ class GRAC(GRAC_base):
                         'Swimmer-v2': 0.5,
                         'Walker2d-v2': 0.85,
 		}
-		self.third_loss_bound = alpha_start#THIRD_LOSS_BOUND[env]
+		self.third_loss_bound = THIRD_LOSS_BOUND[env]
 
 		THIRD_LOSS_BOUND_END = {
-                        'Ant-v2': 0.85,
-                        'Humanoid-v2': 0.85,
+                        'Ant-v2': 0.9,
+                        'Humanoid-v2': 0.9,
                         'HalfCheetah-v2': 0.85,
-                        'Hopper-v2': 0.95,
+                        'Hopper-v2': 0.9,
                         'Swimmer-v2': 0.75,
-                        'Walker2d-v2': 0.95,
+                        'Walker2d-v2': 0.9,
 		}
-		self.third_loss_bound_end = alpha_end#THIRD_LOSS_BOUND_END[env]
+		self.third_loss_bound_end = THIRD_LOSS_BOUND_END[env]
 	
 		MAX_TIMESTEPS = {
                         'Ant-v2': 3e6,
@@ -179,7 +179,7 @@ class GRAC(GRAC_base):
 		self.max_timesteps = MAX_TIMESTEPS[env]
 
 		MAX_ITER_STEPS = {
-                        'Ant-v2': 10,
+                        'Ant-v2': 15,
                         'Humanoid-v2': 20,
                         'HalfCheetah-v2': 50,
                         'Hopper-v2': 20,
@@ -187,7 +187,7 @@ class GRAC(GRAC_base):
                         'Walker2d-v2': 20,
 		}
 
-		self.max_iter_steps = n_repeat#MAX_ITER_STEPS[env]
+		self.max_iter_steps = MAX_ITER_STEPS[env]
 		self.cem_loss_coef = 1.0/float(self.action_dim)
 
 
@@ -308,7 +308,7 @@ class GRAC(GRAC_base):
 		self.update_critic(critic_loss3)
 		prev_prev_critic_loss3 = critic_loss3.clone() * 1.0 
 		prev_critic_loss3 = critic_loss3.clone()
-		init_critic_loss3 = critic_loss.clone()
+		init_critic_loss3 = critic_loss3.clone()
 		ratio = 0.0
 		max_step = 0
 		writer.add_scalar('train_critic/third_violation_max_loss3_init',torch.max(loss3_max_init), self.total_it)
