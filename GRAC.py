@@ -337,8 +337,6 @@ class GRAC(GRAC_base):
 			if idi > self.max_iter_steps:
 				cond2 = 1
 				break
-			prev_prev_critic_loss3 = prev_critic_loss3.clone()
-			prev_critic_loss3 = critic_loss3.clone()
 		writer.add_scalar('train_critic/third_loss_num', idi, self.total_it)
 		if log_it:
 			writer.add_scalar('train_critic/third_loss_cond1', cond1, self.total_it)
