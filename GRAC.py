@@ -115,8 +115,8 @@ class GRAC(GRAC_base):
 		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, noise_clip, policy_freq, device)
 
 		self.actor = Actor(state_dim, action_dim, max_action).to(device)
-		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=3e-4)
-		self.actor_lr = 3e-4
+		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=2e-4)
+		self.actor_lr = 2e-4
 
 		self.critic = Critic(state_dim, action_dim).to(device)
 		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=3e-4)
@@ -192,7 +192,7 @@ class GRAC(GRAC_base):
                         'Ant-v2': 1./float(self.action_dim),
                         'Humanoid-v2': 1./float(self.action_dim),
                         'HalfCheetah-v2': 1./float(self.action_dim),
-                        'Hopper-v2': 0.3/float(self.action_dim),
+                        'Hopper-v2': 1.0/float(self.action_dim),
                         'Swimmer-v2': 1./float(self.action_dim),
                         'Walker2d-v2': 1.0/float(self.action_dim),
 		}
@@ -335,7 +335,7 @@ class GRAC(GRAC_base):
 				bound = self.third_loss_bound + float(self.total_it) / float(self.max_timesteps) * (self.third_loss_bound_end - self.third_loss_bound)
 			else:
 				bound = self.third_loss_bound_end
-			if critic_loss3 < init_critic_loss3 * bound and torch.max(loss3_max) < torch.max(loss3_max_init) * bound:
+			if critic_loss3 < init_critic_loss3 * bound:# and torch.max(loss3_max) < torch.max(loss3_max_init) * bound:
 				cond1 = 1
 				break   
 			if idi > self.max_iter_steps:
@@ -373,6 +373,8 @@ class GRAC(GRAC_base):
 			adv = (q_better_action - q_actor_action).detach()
 			adv = torch.max(torch.zeros_like(adv),adv)
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
+			if log_it:
+				writer.add_scalar('train_actor/cem_loss_ceof', self.cem_loss_coef, self.total_it)
 			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action).mean()
 
 			# Optimize the actor 
