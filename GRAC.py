@@ -15,7 +15,6 @@ import os
 
 epsilon = 1e-6
 
-
 class Actor(nn.Module):
 	def __init__(self, state_dim, action_dim, max_action):
 		super(Actor, self).__init__()
@@ -129,44 +128,44 @@ class GRAC(GRAC_base):
 		self.log_freq = 200
 	
 		ACTOR_LR_START = {
-			'Ant-v2': 3e-4,
-			'Humanoid-v2': 3e-4,
-            'HalfCheetah-v2': 3e-4,
-            'Hopper-v2': 3e-4,
-            'Swimmer-v2': 3e-4,
-            'Walker2d-v2': 3e-4,
+			'Ant-v2': 2e-4,
+			'Humanoid-v2': 2e-4,
+            'HalfCheetah-v2': 2e-4,
+            'Hopper-v2': 2e-4,
+            'Swimmer-v2': 2e-4,
+            'Walker2d-v2': 2e-4,
 		}
 		self.actor_lr_start = ACTOR_LR_START[env]
 
 		ACTOR_LR_END = {
- 			'Ant-v2': 0.5e-4,
-			'Humanoid-v2': 0.5e-4,
-            'HalfCheetah-v2': 0.5e-4,
-            'Hopper-v2': 0.5e-4,
-            'Swimmer-v2': 0.5e-4,
-            'Walker2d-v2': 0.5e-4,
+ 			'Ant-v2': 2e-4,
+			'Humanoid-v2': 2e-4,
+            'HalfCheetah-v2': 2e-4,
+            'Hopper-v2': 2e-4,
+            'Swimmer-v2': 2e-4,
+            'Walker2d-v2': 2e-4,
 		}
 		self.actor_lr_end = ACTOR_LR_END[env]
 
 		THIRD_LOSS_BOUND = {
-                        'Ant-v2': 0.7,
-                        'Humanoid-v2': 0.7,
-                        'HalfCheetah-v2': 0.7,
-                        'Hopper-v2': 0.85,
-                        'Swimmer-v2': 0.5,
-                        'Walker2d-v2': 0.85,
+             'Ant-v2': 0.8,
+             'Humanoid-v2': 0.8,
+             'HalfCheetah-v2': 0.8,
+             'Hopper-v2': 0.85,
+             'Swimmer-v2': 0.6,
+             'Walker2d-v2': 0.85,
 		}
-		self.third_loss_bound = alpha_start#THIRD_LOSS_BOUND[env]
+		self.third_loss_bound = THIRD_LOSS_BOUND[env]
 
 		THIRD_LOSS_BOUND_END = {
-                        'Ant-v2': 0.85,
-                        'Humanoid-v2': 0.85,
-                        'HalfCheetah-v2': 0.85,
-                        'Hopper-v2': 0.95,
-                        'Swimmer-v2': 0.75,
-                        'Walker2d-v2': 0.95,
+             'Ant-v2': 0.9,
+             'Humanoid-v2': 0.9,
+             'HalfCheetah-v2': 0.9,
+             'Hopper-v2': 0.9,
+             'Swimmer-v2': 0.8,
+             'Walker2d-v2': 0.9,
 		}
-		self.third_loss_bound_end = alpha_end#THIRD_LOSS_BOUND_END[env]
+		self.third_loss_bound_end = THIRD_LOSS_BOUND_END[env]
 	
 		MAX_TIMESTEPS = {
                         'Ant-v2': 3e6,
@@ -179,24 +178,32 @@ class GRAC(GRAC_base):
 		self.max_timesteps = MAX_TIMESTEPS[env]
 
 		MAX_ITER_STEPS = {
-                        'Ant-v2': 10,
-                        'Humanoid-v2': 20,
-                        'HalfCheetah-v2': 50,
+                        'Ant-v2': 100,
+                        'Humanoid-v2': 100,
+                        'HalfCheetah-v2': 100,
                         'Hopper-v2': 20,
                         'Swimmer-v2': 20,
                         'Walker2d-v2': 20,
 		}
 
-		self.max_iter_steps = n_repeat#MAX_ITER_STEPS[env]
-		self.cem_loss_coef = 1.0/float(self.action_dim)
+		self.max_iter_steps = MAX_ITER_STEPS[env]
 
+		CEM_LOSS_COEF = {
+                        'Ant-v2': 1./float(self.action_dim),
+                        'Humanoid-v2': 1./float(self.action_dim),
+                        'HalfCheetah-v2': 1./float(self.action_dim),
+                        'Hopper-v2': 0.3/float(self.action_dim),
+                        'Swimmer-v2': 1./float(self.action_dim),
+                        'Walker2d-v2': 1.0/float(self.action_dim),
+		}
+		self.cem_loss_coef = CEM_LOSS_COEF[env]
 
 	def select_action(self, state, writer=None, test=False):
 		state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
 		if test is False:
 			with torch.no_grad():
-				action = self.actor(state)
-				better_action = self.searcher.search(state, action, self.critic.Q2, batch_size=1)
+				action, _ , mean, sigma = self.actor.forward_all(state)
+				better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action)
 	
 				Q1, Q2 = self.critic(state, action)
 				Q = torch.min(Q1, Q2)
@@ -228,10 +235,8 @@ class GRAC(GRAC_base):
 		with torch.no_grad():
 
 			# Select action according to policy and add clipped noise
-			next_action = (
-				self.actor(next_state)
-			).clamp(-self.max_action, self.max_action)
-			better_next_action = self.searcher.search(next_state, next_action, self.critic.Q2)
+			next_action, _, next_mean, next_sigma = self.actor.forward_all(next_state)
+			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action)
 
 			target_Q1, target_Q2 = self.critic(next_state, next_action)
 			target_Q = torch.min(target_Q1, target_Q2)
@@ -352,7 +357,6 @@ class GRAC(GRAC_base):
 
 		critic_loss = F.mse_loss(current_Q1, target_Q_final) + F.mse_loss(current_Q2, target_Q_final)
 	
-		self.actor_lr = self.actor_lr_start + float(self.total_it) / float(self.max_timesteps) * (self.actor_lr_end - self.actor_lr_start)
 		if self.total_it % 1 == 0:
 			lr_tmp = self.actor_lr / (float(critic_loss)+1.0)
 			self.actor_optimizer = self.lr_scheduler(self.actor_optimizer, lr_tmp)
@@ -362,11 +366,12 @@ class GRAC(GRAC_base):
 			q_actor_action = self.critic.Q1(state, actor_action)
 			m = Normal(action_mean, action_sigma)
 
-			better_action = self.searcher.search(state, actor_action, self.critic.Q1, batch_size=batch_size)
+			better_action = self.searcher.search(state, action_mean, self.critic.Q1, batch_size=batch_size, cov=(action_sigma)**2, sampled_action=actor_action)
 			q_better_action = self.critic.Q1(state, better_action)
 			log_prob_better_action = m.log_prob(better_action)
 
 			adv = (q_better_action - q_actor_action).detach()
+			adv = torch.max(torch.zeros_like(adv),adv)
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
 			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action).mean()
 
