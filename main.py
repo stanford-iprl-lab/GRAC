@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
 		# Train agent after collecting sufficient data
 		if t >= args.start_timesteps:
-			policy.train(replay_buffer, args.batch_size, writer, (reward_max - reward_min))
+			policy.train(replay_buffer, args.batch_size, writer, (reward_max - reward_min) * 2.0)
 
 		if done: 
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
