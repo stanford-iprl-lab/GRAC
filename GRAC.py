@@ -169,8 +169,8 @@ class GRAC(GRAC_base):
 	
 		MAX_TIMESTEPS = {
                         'Ant-v2': 3e6,
-                        'Humanoid-v2': 6e6,
-                        'HalfCheetah-v2': 6e6,
+                        'Humanoid-v2': 5e6,
+                        'HalfCheetah-v2': 3e6,
                         'Hopper-v2': 1e6,
                         'Swimmer-v2': 1e6,
                         'Walker2d-v2': 1e6,
@@ -312,7 +312,6 @@ class GRAC(GRAC_base):
 		critic_loss3 = F.mse_loss(current_Q1_, target_Q_final) + F.mse_loss(current_Q2_, target_Q_final) + F.mse_loss(target_Q1_, target_Q1) + F.mse_loss(target_Q2_, target_Q2)
 		self.update_critic(critic_loss3)
 		prev_prev_critic_loss3 = critic_loss3.clone() * 1.0 
-		prev_critic_loss3 = critic_loss3.clone()
 		init_critic_loss3 = critic_loss.clone()
 		ratio = 0.0
 		max_step = 0
@@ -328,9 +327,6 @@ class GRAC(GRAC_base):
 			loss3_max = torch.pow(current_Q1_ - target_Q_final, 2) + torch.pow(current_Q2_- target_Q_final,2) + torch.pow(target_Q1_- target_Q1, 2) + torch.pow(target_Q2_- target_Q2, 2)
 			critic_loss3 = F.mse_loss(current_Q1_, target_Q_final) + F.mse_loss(current_Q2_, target_Q_final) + F.mse_loss(target_Q1_, target_Q1) + F.mse_loss(target_Q2_, target_Q2)
 			self.update_critic(critic_loss3)
-			if critic_loss3/init_critic_loss3 > ratio:
-				ratio = critic_loss3/init_critic_loss3
-				max_step = idi
 			if self.total_it < self.max_timesteps:
 				bound = self.third_loss_bound + float(self.total_it) / float(self.max_timesteps) * (self.third_loss_bound_end - self.third_loss_bound)
 			else:
