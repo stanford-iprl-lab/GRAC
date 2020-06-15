@@ -202,16 +202,17 @@ class GRAC(GRAC_base):
 		if test is False:
 			with torch.no_grad():
 				action, _ , mean, sigma = self.actor.forward_all(state)
-				better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action)
+				#better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action)
 	
-				Q1, Q2 = self.critic(state, action)
-				Q = torch.min(Q1, Q2)
+				#Q1, Q2 = self.critic(state, action)
+				#Q = torch.min(Q1, Q2)
 	
-				better_Q1, better_Q2 = self.critic(state, better_action)
-				better_Q = torch.min(better_Q1, better_Q2)
+				#better_Q1, better_Q2 = self.critic(state, better_action)
+				#better_Q = torch.min(better_Q1, better_Q2)
 	
-				action_index = (Q > better_Q).squeeze()
-				better_action[action_index] = action[action_index]
+				#action_index = (Q > better_Q).squeeze()
+				#better_action[action_index] = action[action_index]
+				better_action = action
 			return better_action.cpu().data.numpy().flatten()
 
 		else:
