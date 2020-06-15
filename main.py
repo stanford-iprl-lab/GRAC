@@ -38,7 +38,7 @@ if __name__ == "__main__":
 	parser.add_argument("--policy", default="GRAC")                  # Policy name (GRAC)
 	parser.add_argument("--env", default="Ant-v2")          # OpenAI gym environment name
 	parser.add_argument("--seed", default=0, type=int)              # Sets Gym, PyTorch and Numpy seeds
-	parser.add_argument("--start_timesteps", default=2e4, type=int) # Time steps initial random policy is used
+	parser.add_argument("--start_timesteps", default=1e4, type=int) # Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
 	parser.add_argument("--max_timesteps", default=3e6, type=int)   # Max time steps to run environment
 	parser.add_argument("--expl_noise", default=0.1)                # Std of Gaussian exploration noise
@@ -144,9 +144,7 @@ if __name__ == "__main__":
 
 	reward_min = 0
 	reward_max = 0
-	reward_scale = 0
 	reward_range = 0
-	reward_list = []
 	# writer = utils.WriterLoggerWrapper(result_folder, comment=file_name, max_timesteps=args.max_timesteps)
 	writer = SummaryWriter(log_dir=result_folder, comment=file_name)
 
@@ -178,26 +176,22 @@ if __name__ == "__main__":
 		writer.add_scalar('test/reward', reward, t+1)
 		done_bool = float(done) if episode_timesteps < env._max_episode_steps else 0
 
-		if t < args.start_timesteps/2.0:
+		if t < args.start_timesteps:
 			reward_min = min(reward, reward_min)
 			reward_max = max(reward, reward_max)
-			reward_list.append(reward)
-			reward_scale = (reward_max - reward_min) / 2.0
 			reward_range = (reward_max - reward_min)
 			writer.add_scalar('train_early_stage/reward_min', reward_min, t)
 			writer.add_scalar('train_early_stage/reward_max', reward_max, t)
 			writer.add_scalar('train_early_stage/reward_range',reward_range, t)
-			writer.add_scalar('train_early_stage/reward_scale',reward_scale,t)
 		# Store data in replay buffer
-		if t > args.start_timesteps/2.0:
-			replay_buffer.add(state, action, next_state, (reward/reward_scale), done_bool)
+		replay_buffer.add(state, action, next_state, reward, done_bool)
 
 		state = next_state
 		episode_reward += reward
 
 		# Train agent after collecting sufficient data
 		if t >= args.start_timesteps:
-			policy.train(replay_buffer, args.batch_size, writer, (reward_range/reward_scale))
+			policy.train(replay_buffer, args.batch_size, writer, reward_range*2.0)
 
 		if done: 
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
