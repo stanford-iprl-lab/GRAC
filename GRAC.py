@@ -113,9 +113,18 @@ class GRAC(GRAC_base):
 	):
 		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, noise_clip, policy_freq, device)
 
+		ACTOR_LR  = {
+            'Ant-v2': 3e-4,
+            'Humanoid-v2': 3e-4,
+            'HalfCheetah-v2': 6e-4,
+            'Hopper-v2': 2e-4,
+            'Swimmer-v2': 2e-4,
+            'Walker2d-v2': 2e-4,
+		}
+		self.actor_lr =  ACTOR_LR[env]
+
 		self.actor = Actor(state_dim, action_dim, max_action).to(device)
-		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=3e-4)
-		self.actor_lr = 3e-4
+		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
 
 		self.critic = Critic(state_dim, action_dim).to(device)
 		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=3e-4)
@@ -125,7 +134,8 @@ class GRAC(GRAC_base):
 		self.searcher = Searcher(action_dim, max_action, device=device, sigma_init=cem_sigma, clip=cem_clip, batch_size=batch_size)
 		self.action_dim = float(action_dim)
 		self.log_freq = 200
-	
+
+
 		ACTOR_LR_START = {
 			'Ant-v2': 3e-4,
 			'Humanoid-v2': 2e-4,
