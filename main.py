@@ -186,7 +186,7 @@ if __name__ == "__main__":
 			writer.add_scalar('train_early_stage/reward_scale',reward_scale,t)
 		# Store data in replay buffer
 		if t > args.start_timesteps/2.0:
-			replay_buffer.add(state, action, next_state, reward/reward_scale, done_bool)
+			replay_buffer.add(state, action, next_state, (reward/reward_scale) * 2.0, done_bool)
 
 		state = next_state
 		episode_reward += reward
