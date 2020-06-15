@@ -182,8 +182,8 @@ if __name__ == "__main__":
 			reward_min = min(reward, reward_min)
 			reward_max = max(reward, reward_max)
 			reward_list.append(reward)
-			reward_scale = reward_max - reward_min
-			reward_range = (reward_max - reward_min) / 2.0
+			reward_scale = (reward_max - reward_min) / 2.0
+			reward_range = (reward_max - reward_min)
 			writer.add_scalar('train_early_stage/reward_min', reward_min, t)
 			writer.add_scalar('train_early_stage/reward_max', reward_max, t)
 			writer.add_scalar('train_early_stage/reward_range',reward_range, t)
