@@ -190,14 +190,14 @@ if __name__ == "__main__":
 			writer.add_scalar('train_early_stage/reward_scale',reward_scale,t)
 		# Store data in replay buffer
 		if t > args.start_timesteps/2.0:
-			replay_buffer.add(state, action, next_state, (reward/reward_scale), done_bool)
+			replay_buffer.add(state, action, next_state, (reward), done_bool)
 
 		state = next_state
 		episode_reward += reward
 
 		# Train agent after collecting sufficient data
 		if t >= args.start_timesteps:
-			policy.train(replay_buffer, args.batch_size, writer, (reward_range/reward_scale)*2.0)
+			policy.train(replay_buffer, args.batch_size, writer, (reward_range)*2.0)
 
 		if done: 
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
