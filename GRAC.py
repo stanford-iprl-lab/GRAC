@@ -12,7 +12,6 @@ import datetime
 import os
 # Implementation of Self-Guided and Self-Regularized Actor-Critic Algorithm.
 
-
 epsilon = 1e-6
 
 class Actor(nn.Module):
