@@ -115,8 +115,8 @@ class GRAC(GRAC_base):
 		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, noise_clip, policy_freq, device)
 
 		self.actor = Actor(state_dim, action_dim, max_action).to(device)
-		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=2e-4)
-		self.actor_lr = 2e-4
+		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=3e-4)
+		self.actor_lr = 3e-4
 
 		self.critic = Critic(state_dim, action_dim).to(device)
 		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=3e-4)
@@ -128,7 +128,7 @@ class GRAC(GRAC_base):
 		self.log_freq = 200
 	
 		ACTOR_LR_START = {
-			'Ant-v2': 2e-4,
+			'Ant-v2': 3e-4,
 			'Humanoid-v2': 2e-4,
             'HalfCheetah-v2': 2e-4,
             'Hopper-v2': 2e-4,
@@ -138,7 +138,7 @@ class GRAC(GRAC_base):
 		self.actor_lr_start = ACTOR_LR_START[env]
 
 		ACTOR_LR_END = {
- 			'Ant-v2': 2e-4,
+ 			'Ant-v2': 3e-4,
 			'Humanoid-v2': 2e-4,
             'HalfCheetah-v2': 2e-4,
             'Hopper-v2': 2e-4,
@@ -158,9 +158,9 @@ class GRAC(GRAC_base):
 		self.third_loss_bound = THIRD_LOSS_BOUND[env]
 
 		THIRD_LOSS_BOUND_END = {
-             'Ant-v2': 0.9,
+             'Ant-v2': 0.85,
              'Humanoid-v2': 0.9,
-             'HalfCheetah-v2': 0.9,
+             'HalfCheetah-v2': 0.85,
              'Hopper-v2': 0.9,
              'Swimmer-v2': 0.8,
              'Walker2d-v2': 0.9,
@@ -349,10 +349,11 @@ class GRAC(GRAC_base):
 			after_target_Q1, after_target_Q2 = self.critic(next_state, next_action)
 			after_current_Q1, after_current_Q2 = self.critic(state, action)
 
-		critic_loss = F.mse_loss(current_Q1, target_Q_final) + F.mse_loss(current_Q2, target_Q_final)
-	
+		#critic_loss = F.mse_loss(current_Q1, target_Q_final) + F.mse_loss(current_Q2, target_Q_final)
+		weights_actor_lr = (abs(current_Q1_ - target_Q_final) + abs(current_Q2_- target_Q_final)).mean().detach()
+
 		if self.total_it % 1 == 0:
-			lr_tmp = self.actor_lr / (float(critic_loss)+1.0)
+			lr_tmp = self.actor_lr / (float(weights_actor_lr)+1.0)
 			self.actor_optimizer = self.lr_scheduler(self.actor_optimizer, lr_tmp)
 
 			# Compute actor loss
