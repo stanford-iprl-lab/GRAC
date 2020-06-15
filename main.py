@@ -145,6 +145,7 @@ if __name__ == "__main__":
 	reward_min = 0
 	reward_max = 0
 	reward_scale = 0
+	reward_range = 0
 	# writer = utils.WriterLoggerWrapper(result_folder, comment=file_name, max_timesteps=args.max_timesteps)
 	writer = SummaryWriter(log_dir=result_folder, comment=file_name)
 
@@ -180,20 +181,21 @@ if __name__ == "__main__":
 			reward_min = min(reward, reward_min)
 			reward_max = max(reward, reward_max)
 			reward_scale = max(abs(reward_max),abs(reward_min))
+			reward_range = reward_max - reward_min
 			writer.add_scalar('train_early_stage/reward_min', reward_min, t)
 			writer.add_scalar('train_early_stage/reward_max', reward_max, t)
-			writer.add_scalar('train_early_stage/reward_range',reward_max - reward_min, t)
+			writer.add_scalar('train_early_stage/reward_range',reward_range, t)
 			writer.add_scalar('train_early_stage/reward_scale',reward_scale,t)
 		# Store data in replay buffer
 		if t > args.start_timesteps/2.0:
-			replay_buffer.add(state, action, next_state, reward/reward_scale, done_bool)
+			replay_buffer.add(state, action, next_state, reward, done_bool)
 
 		state = next_state
 		episode_reward += reward
 
 		# Train agent after collecting sufficient data
 		if t >= args.start_timesteps:
-			policy.train(replay_buffer, args.batch_size, writer, 20.0)
+			policy.train(replay_buffer, args.batch_size, writer, reward_range)
 
 		if done: 
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
