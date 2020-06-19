@@ -114,9 +114,9 @@ class GRAC(GRAC_base):
 		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, noise_clip, policy_freq, device)
 
 		ACTOR_LR  = {
-            'Ant-v2': 3e-4,
+            'Ant-v2': 1e-4,
             'Humanoid-v2': 3e-4,
-            'HalfCheetah-v2': 6e-4,
+            'HalfCheetah-v2': 1e-3,
             'Hopper-v2': 2e-4,
             'Swimmer-v2': 2e-4,
             'Walker2d-v2': 2e-4,
@@ -157,7 +157,7 @@ class GRAC(GRAC_base):
 		self.actor_lr_end = ACTOR_LR_END[env]
 
 		THIRD_LOSS_BOUND = {
-             'Ant-v2': 0.8,
+             'Ant-v2': 0.75,
              'Humanoid-v2': 0.7,
              'HalfCheetah-v2': 0.8,
              'Hopper-v2': 0.85,
@@ -200,11 +200,12 @@ class GRAC(GRAC_base):
 		CEM_LOSS_COEF = {
                         'Ant-v2': 1./float(self.action_dim),
                         'Humanoid-v2': 1./float(self.action_dim),
-                        'HalfCheetah-v2': 1./float(self.action_dim),
+                        'HalfCheetah-v2': 100./float(self.action_dim),
                         'Hopper-v2': 1.0/float(self.action_dim),
                         'Swimmer-v2': 1./float(self.action_dim),
                         'Walker2d-v2': 1.0/float(self.action_dim),
 		}
+
 		self.cem_loss_coef = CEM_LOSS_COEF[env]
 
 	def select_action(self, state, writer=None, test=False):
@@ -373,7 +374,7 @@ class GRAC(GRAC_base):
 
 			better_action = self.searcher.search(state, action_mean, self.critic.Q1, batch_size=batch_size, cov=(action_sigma)**2, sampled_action=actor_action)
 			q_better_action = self.critic.Q1(state, better_action)
-			log_prob_better_action = m.log_prob(better_action)
+			log_prob_better_action = m.log_prob(better_action).sum(1,keepdim=True)
 
 			adv = (q_better_action - q_actor_action).detach()
 			adv = torch.max(torch.zeros_like(adv),adv)
