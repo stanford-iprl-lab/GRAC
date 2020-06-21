@@ -116,7 +116,7 @@ class GRAC(GRAC_base):
 		ACTOR_LR  = {
             'Ant-v2': 1e-4,
             'Humanoid-v2': 3e-4,
-            'HalfCheetah-v2': 1e-3,
+            'HalfCheetah-v2': 5e-3,
             'Hopper-v2': 2e-4,
             'Swimmer-v2': 2e-4,
             'Walker2d-v2': 2e-4,
@@ -134,7 +134,6 @@ class GRAC(GRAC_base):
 		self.searcher = Searcher(action_dim, max_action, device=device, sigma_init=cem_sigma, clip=cem_clip, batch_size=batch_size)
 		self.action_dim = float(action_dim)
 		self.log_freq = 200
-
 
 		ACTOR_LR_START = {
 			'Ant-v2': 3e-4,
@@ -169,7 +168,7 @@ class GRAC(GRAC_base):
 		THIRD_LOSS_BOUND_END = {
              'Ant-v2': 0.85,
              'Humanoid-v2': 0.85,
-             'HalfCheetah-v2': 0.85,
+             'HalfCheetah-v2': 0.9,
              'Hopper-v2': 0.9,
              'Swimmer-v2': 0.8,
              'Walker2d-v2': 0.9,
@@ -247,7 +246,7 @@ class GRAC(GRAC_base):
 
 			# Select action according to policy and add clipped noise
 			next_action, _, next_mean, next_sigma = self.actor.forward_all(next_state)
-			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action)
+			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action,n_iter=1)
 
 			target_Q1, target_Q2 = self.critic(next_state, next_action)
 			target_Q = torch.min(target_Q1, target_Q2)
@@ -381,7 +380,7 @@ class GRAC(GRAC_base):
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
 			if log_it:
 				writer.add_scalar('train_actor/cem_loss_ceof', self.cem_loss_coef, self.total_it)
-			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action).mean()
+			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action + 0.005 * torch.log(action_sigma).sum(1,keepdim=True)).mean()
 
 			# Optimize the actor 
 			Q_before_update = self.critic.Q1(state, actor_action)
