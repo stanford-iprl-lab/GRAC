@@ -115,7 +115,7 @@ class GRAC(GRAC_base):
 
 		ACTOR_LR  = {
             'Ant-v2': 1e-4,
-            'Humanoid-v2': 3e-4,
+            'Humanoid-v2': 1e-4,
             'HalfCheetah-v2': 5e-3,
             'Hopper-v2': 2e-4,
             'Swimmer-v2': 2e-4,
@@ -157,7 +157,7 @@ class GRAC(GRAC_base):
 
 		THIRD_LOSS_BOUND = {
              'Ant-v2': 0.75,
-             'Humanoid-v2': 0.7,
+             'Humanoid-v2': 0.8,
              'HalfCheetah-v2': 0.8,
              'Hopper-v2': 0.85,
              'Swimmer-v2': 0.6,
@@ -167,7 +167,7 @@ class GRAC(GRAC_base):
 
 		THIRD_LOSS_BOUND_END = {
              'Ant-v2': 0.85,
-             'Humanoid-v2': 0.85,
+             'Humanoid-v2': 0.9,
              'HalfCheetah-v2': 0.9,
              'Hopper-v2': 0.9,
              'Swimmer-v2': 0.8,
@@ -380,7 +380,8 @@ class GRAC(GRAC_base):
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
 			if log_it:
 				writer.add_scalar('train_actor/cem_loss_ceof', self.cem_loss_coef, self.total_it)
-			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action + 0.005 * torch.log(action_sigma).sum(1,keepdim=True)).mean()
+			expl_ceof = 0.005 * (1 - float(self.total_it)/self.max_timesteps)
+			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action + expl_ceof * torch.log(action_sigma).sum(1,keepdim=True)).mean()
 
 			# Optimize the actor 
 			Q_before_update = self.critic.Q1(state, actor_action)
