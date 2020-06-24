@@ -116,7 +116,7 @@ class GRAC(GRAC_base):
 		ACTOR_LR  = {
             'Ant-v2': 1e-4,
             'Humanoid-v2': 2e-4,
-            'HalfCheetah-v2': 1e-3,
+            'HalfCheetah-v2': 3e-4,
             'Hopper-v2': 2e-4,
             'Swimmer-v2': 2e-4,
             'Walker2d-v2': 2e-4,
@@ -199,7 +199,7 @@ class GRAC(GRAC_base):
 		CEM_LOSS_COEF = {
                         'Ant-v2': 1./float(self.action_dim),
                         'Humanoid-v2': 1./float(self.action_dim),
-                        'HalfCheetah-v2': 1./float(self.action_dim),
+                        'HalfCheetah-v2': 100./float(self.action_dim),
                         'Hopper-v2': 1.0/float(self.action_dim),
                         'Swimmer-v2': 1./float(self.action_dim),
                         'Walker2d-v2': 1.0/float(self.action_dim),
