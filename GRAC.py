@@ -30,7 +30,7 @@ class Actor(nn.Module):
 		a = F.relu(self.l1(state))
 		a = F.relu(self.l2(a))
 		mean = self.max_action * torch.tanh(self.l3_mean(a))
-		sigma = F.softplus(self.l3_sigma(a)) + 0.001
+		sigma = (F.softplus(self.l3_sigma(a)) + 0.001).clamp(0.001,2.0*self.max_action)
 		normal = Normal(mean, sigma)
 		action = normal.rsample().clamp(-self.max_action, self.max_action)
 		return action
@@ -39,7 +39,7 @@ class Actor(nn.Module):
 		a = F.relu(self.l1(state))
 		a = F.relu(self.l2(a))
 		mean = self.max_action * torch.tanh(self.l3_mean(a))
-		sigma = F.softplus(self.l3_sigma(a)) + 0.001
+		sigma = (F.softplus(self.l3_sigma(a)) + 0.001).clamp(0.001,2.0*self.max_action)
 		normal = Normal(mean, sigma)
 		action = normal.rsample()
 		log_prob = normal.log_prob(action).sum(1,keepdim=True)
@@ -116,7 +116,7 @@ class GRAC(GRAC_base):
 		ACTOR_LR  = {
             'Ant-v2': 1e-4,
             'Humanoid-v2': 1e-4,
-            'HalfCheetah-v2': 5e-3,
+            'HalfCheetah-v2': 1e-3,
             'Hopper-v2': 2e-4,
             'Swimmer-v2': 2e-4,
             'Walker2d-v2': 2e-4,
@@ -129,8 +129,8 @@ class GRAC(GRAC_base):
 		self.critic = Critic(state_dim, action_dim).to(device)
 		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=3e-4)
 
-		cem_sigma = 1e-2
-		cem_clip = 0.5
+		cem_sigma = 1e-2 * self.max_action * self.max_action
+		cem_clip = 0.5 * self.max_action
 		self.searcher = Searcher(action_dim, max_action, device=device, sigma_init=cem_sigma, clip=cem_clip, batch_size=batch_size)
 		self.action_dim = float(action_dim)
 		self.log_freq = 200
@@ -199,7 +199,7 @@ class GRAC(GRAC_base):
 		CEM_LOSS_COEF = {
                         'Ant-v2': 1./float(self.action_dim),
                         'Humanoid-v2': 1./float(self.action_dim),
-                        'HalfCheetah-v2': 100./float(self.action_dim),
+                        'HalfCheetah-v2': 1./float(self.action_dim),
                         'Hopper-v2': 1.0/float(self.action_dim),
                         'Swimmer-v2': 1./float(self.action_dim),
                         'Walker2d-v2': 1.0/float(self.action_dim),
@@ -380,7 +380,7 @@ class GRAC(GRAC_base):
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
 			if log_it:
 				writer.add_scalar('train_actor/cem_loss_ceof', self.cem_loss_coef, self.total_it)
-			expl_ceof = 0.005 * (1 - float(self.total_it)/self.max_timesteps)
+			expl_ceof = 0.01 * (1 - float(self.total_it)/self.max_timesteps)
 			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action + expl_ceof * torch.log(action_sigma).sum(1,keepdim=True)).mean()
 
 			# Optimize the actor 
