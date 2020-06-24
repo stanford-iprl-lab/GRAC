@@ -115,8 +115,8 @@ class GRAC(GRAC_base):
 
 		ACTOR_LR  = {
             'Ant-v2': 1e-4,
-            'Humanoid-v2': 2e-4,
-            'HalfCheetah-v2': 3e-4,
+            'Humanoid-v2': 1e-4,
+            'HalfCheetah-v2': 1e-3,
             'Hopper-v2': 2e-4,
             'Swimmer-v2': 2e-4,
             'Walker2d-v2': 2e-4,
@@ -129,8 +129,8 @@ class GRAC(GRAC_base):
 		self.critic = Critic(state_dim, action_dim).to(device)
 		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=3e-4)
 
-		cem_sigma = 1e-2
-		cem_clip = 0.5
+		cem_sigma = 1e-2 * self.max_action * self.max_action
+		cem_clip = 0.5 * self.max_action
 		self.searcher = Searcher(action_dim, max_action, device=device, sigma_init=cem_sigma, clip=cem_clip, batch_size=batch_size)
 		self.action_dim = float(action_dim)
 		self.log_freq = 200
@@ -157,7 +157,7 @@ class GRAC(GRAC_base):
 
 		THIRD_LOSS_BOUND = {
              'Ant-v2': 0.75,
-             'Humanoid-v2': 0.7,
+             'Humanoid-v2': 0.8,
              'HalfCheetah-v2': 0.8,
              'Hopper-v2': 0.85,
              'Swimmer-v2': 0.6,
@@ -167,7 +167,7 @@ class GRAC(GRAC_base):
 
 		THIRD_LOSS_BOUND_END = {
              'Ant-v2': 0.85,
-             'Humanoid-v2': 0.85,
+             'Humanoid-v2': 0.9,
              'HalfCheetah-v2': 0.9,
              'Hopper-v2': 0.9,
              'Swimmer-v2': 0.8,
