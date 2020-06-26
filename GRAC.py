@@ -125,20 +125,19 @@ class GRAC(GRAC_base):
 
 		self.actor = Actor(state_dim, action_dim, max_action).to(device)
 		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
-
-        CRITIC_LR  = {
+		
+		CRITIC_LR  = {
             'Ant-v2': 3e-4,
             'Humanoid-v2': 3e-4,
             'HalfCheetah-v2': 1e-3,
             'Hopper-v2': 3e-4,
             'Swimmer-v2': 3e-4,
             'Walker2d-v2': 3e-4,
-        }
-
-        self.critic_lr =  CRITIC_LR[env]
+		}
+		self.critic_lr =  CRITIC_LR[env]
 
 		self.critic = Critic(state_dim, action_dim).to(device)
-		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=3e-4)
+		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
 
 		cem_sigma = 1e-2 * self.max_action * self.max_action
 		cem_clip = 0.5 * self.max_action
