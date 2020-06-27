@@ -114,12 +114,12 @@ class GRAC(GRAC_base):
 		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, noise_clip, policy_freq, device)
 
 		ACTOR_LR  = {
-            'Ant-v2': 1e-4,
-            'Humanoid-v2': 1e-4,
-            'HalfCheetah-v2': 1e-3,
-            'Hopper-v2': 2e-4,
-            'Swimmer-v2': 2e-4,
-            'Walker2d-v2': 2e-4,
+            		'Ant-v2': 1e-4,
+            		'Humanoid-v2': 1e-4,
+            		'HalfCheetah-v2': 1e-3,
+            		'Hopper-v2': 2e-4,
+            		'Swimmer-v2': 2e-4,
+            		'Walker2d-v2': 2e-4,
 		}
 		self.actor_lr =  ACTOR_LR[env]
 
@@ -127,13 +127,14 @@ class GRAC(GRAC_base):
 		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
 		
 		CRITIC_LR  = {
-            'Ant-v2': 3e-4,
-            'Humanoid-v2': 3e-4,
-            'HalfCheetah-v2': 1e-3,
-            'Hopper-v2': 3e-4,
-            'Swimmer-v2': 3e-4,
-            'Walker2d-v2': 3e-4,
+	            'Ant-v2': 3e-4,
+        	    'Humanoid-v2': 3e-4,
+	            'HalfCheetah-v2': 3e-4,
+       	            'Hopper-v2': 3e-4,
+           	    'Swimmer-v2': 3e-4,
+                    'Walker2d-v2': 3e-4,
 		}
+
 		self.critic_lr =  CRITIC_LR[env]
 
 		self.critic = Critic(state_dim, action_dim).to(device)
@@ -146,10 +147,10 @@ class GRAC(GRAC_base):
 		self.log_freq = 200
 
 		THIRD_LOSS_BOUND = {
-             'Ant-v2': 0.75,
-             'Humanoid-v2': 0.8,
-             'HalfCheetah-v2': 0.85,
-             'Hopper-v2': 0.85,
+	             'Ant-v2': 0.75,
+        	     'Humanoid-v2': 0.8,
+             	     'HalfCheetah-v2': 0.85,
+            		 'Hopper-v2': 0.85,
              'Swimmer-v2': 0.6,
              'Walker2d-v2': 0.85,
 		}
@@ -362,7 +363,7 @@ class GRAC(GRAC_base):
 
 		#critic_loss = F.mse_loss(current_Q1, target_Q_final) + F.mse_loss(current_Q2, target_Q_final)
 		weights_actor_lr = (abs(current_Q1_ - target_Q_final) + abs(current_Q2_- target_Q_final)).mean().detach()
-
+		writer.add_scalar('train/weights_actor_lr',weights_actor_lr,self.total_it)
 		if self.total_it % 1 == 0:
 			lr_tmp = self.actor_lr / (float(weights_actor_lr)+1.0)
 			self.actor_optimizer = self.lr_scheduler(self.actor_optimizer, lr_tmp)
