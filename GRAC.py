@@ -202,7 +202,7 @@ class GRAC(GRAC_base):
 		if test is False:
 			with torch.no_grad():
 				action, _ , mean, sigma = self.actor.forward_all(state)
-				ceof = 0.95 - min(0.9, self.total_it * 10.0)/float(self.max_timesteps)
+				ceof = 0.95 - min(0.9, float(self.total_it) * 10.0/float(self.max_timesteps))
 				writer.add_scalar('train/ceof_select_action',ceof, self.total_it)
 				if np.random.uniform(0,1) < ceof:
 					better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=1)
