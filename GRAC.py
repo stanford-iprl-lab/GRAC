@@ -148,7 +148,7 @@ class GRAC(GRAC_base):
 		THIRD_LOSS_BOUND = {
              'Ant-v2': 0.75,
              'Humanoid-v2': 0.8,
-             'HalfCheetah-v2': 0.8,
+             'HalfCheetah-v2': 0.85,
              'Hopper-v2': 0.85,
              'Swimmer-v2': 0.6,
              'Walker2d-v2': 0.85,
@@ -189,7 +189,7 @@ class GRAC(GRAC_base):
 		CEM_LOSS_COEF = {
                         'Ant-v2': 1./float(self.action_dim),
                         'Humanoid-v2': 1./float(self.action_dim),
-                        'HalfCheetah-v2': 100./float(self.action_dim),
+                        'HalfCheetah-v2': 1./float(self.action_dim),
                         'Hopper-v2': 1.0/float(self.action_dim),
                         'Swimmer-v2': 1./float(self.action_dim),
                         'Walker2d-v2': 1.0/float(self.action_dim),
@@ -202,19 +202,17 @@ class GRAC(GRAC_base):
 		if test is False:
 			with torch.no_grad():
 				action, _ , mean, sigma = self.actor.forward_all(state)
-				better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=1)
-	
-				Q1, Q2 = self.critic(state, action)
-				Q = torch.min(Q1, Q2)
-	
-				better_Q1, better_Q2 = self.critic(state, better_action)
-				better_Q = torch.min(better_Q1, better_Q2)
-	
-				action_index = (Q > better_Q).squeeze()
-				better_action[action_index] = action[action_index]
-				#better_action = action
+				if np.random.uniform(0,1) < 1.0 - min(0.95, self.total_it * 10.0)/float(self.max_timesteps):
+					better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=1)
+					Q1, Q2 = self.critic(state, action)
+					Q = torch.min(Q1, Q2)
+					better_Q1, better_Q2 = self.critic(state, better_action)
+					better_Q = torch.min(better_Q1, better_Q2)
+					action_index = (Q > better_Q).squeeze()
+					better_action[action_index] = action[action_index]
+				else:
+					better_action = action
 			return better_action.cpu().data.numpy().flatten()
-
 		else:
 			_, _, action, _ = self.actor.forward_all(state)
 			return action.cpu().data.numpy().flatten()
@@ -370,7 +368,7 @@ class GRAC(GRAC_base):
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
 			if log_it:
 				writer.add_scalar('train_actor/cem_loss_ceof', self.cem_loss_coef, self.total_it)
-			expl_ceof = 0.01 * (1 - float(self.total_it)/self.max_timesteps)
+			expl_ceof = 0.02 * (1 - float(self.total_it)/self.max_timesteps)
 			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action + expl_ceof * torch.log(action_sigma).sum(1,keepdim=True)).mean()
 
 			# Optimize the actor 
