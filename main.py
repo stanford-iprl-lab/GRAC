@@ -163,12 +163,12 @@ if __name__ == "__main__":
 		else:
 			if args.use_expl_noise:
 				action = (
-					policy.select_action(np.array(state)) 
+					policy.select_action(np.array(state),writer=writer) 
 					+ np.random.normal(0, max_action * args.expl_noise, size=action_dim)
 				).clip(-max_action, max_action)
 			else:
 				action = (
-					policy.select_action(np.array(state))
+					policy.select_action(np.array(state),writer=writer)
 				).clip(-max_action, max_action)
 
 		# Perform action
