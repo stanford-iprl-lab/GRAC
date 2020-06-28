@@ -119,7 +119,7 @@ class GRAC(GRAC_base):
             		'HalfCheetah-v2': 1e-3,
             		'Hopper-v2': 2e-4,
             		'Swimmer-v2': 2e-4,
-            		'Walker2d-v2': 2e-4,
+            		'Walker2d-v2': 1e-4,
 		}
 		self.actor_lr =  ACTOR_LR[env]
 
@@ -129,10 +129,10 @@ class GRAC(GRAC_base):
 		CRITIC_LR  = {
 	            'Ant-v2': 3e-4,
         	    'Humanoid-v2': 3e-4,
-	            'HalfCheetah-v2': 3e-4,
-       	            'Hopper-v2': 3e-4,
+	            'HalfCheetah-v2': 6e-4,
+       	            'Hopper-v2': 2e-4,
            	    'Swimmer-v2': 3e-4,
-                    'Walker2d-v2': 3e-4,
+                    'Walker2d-v2': 1e-4,
 		}
 
 		self.critic_lr =  CRITIC_LR[env]
@@ -150,19 +150,19 @@ class GRAC(GRAC_base):
 	             'Ant-v2': 0.75,
         	     'Humanoid-v2': 0.8,
              	     'HalfCheetah-v2': 0.85,
-            		 'Hopper-v2': 0.85,
-             'Swimmer-v2': 0.6,
-             'Walker2d-v2': 0.85,
+            	     'Hopper-v2': 0.85,
+                     'Swimmer-v2': 0.75,
+                     'Walker2d-v2': 0.85,
 		}
 		self.third_loss_bound = THIRD_LOSS_BOUND[env]
 
 		THIRD_LOSS_BOUND_END = {
-             'Ant-v2': 0.85,
-             'Humanoid-v2': 0.9,
-             'HalfCheetah-v2': 0.9,
-             'Hopper-v2': 0.9,
-             'Swimmer-v2': 0.8,
-             'Walker2d-v2': 0.9,
+                     'Ant-v2': 0.85,
+                     'Humanoid-v2': 0.9,
+                     'HalfCheetah-v2': 0.9,
+                     'Hopper-v2': 0.9,
+                     'Swimmer-v2': 0.9,
+                     'Walker2d-v2': 0.9,
 		}
 		self.third_loss_bound_end = THIRD_LOSS_BOUND_END[env]
 	
@@ -180,9 +180,9 @@ class GRAC(GRAC_base):
                         'Ant-v2': 100,
                         'Humanoid-v2': 100,
                         'HalfCheetah-v2': 100,
-                        'Hopper-v2': 20,
-                        'Swimmer-v2': 20,
-                        'Walker2d-v2': 20,
+                        'Hopper-v2': 100,
+                        'Swimmer-v2': 100,
+                        'Walker2d-v2': 100,
 		}
 
 		self.max_iter_steps = MAX_ITER_STEPS[env]
@@ -190,7 +190,7 @@ class GRAC(GRAC_base):
 		CEM_LOSS_COEF = {
                         'Ant-v2': 1./float(self.action_dim),
                         'Humanoid-v2': 1./float(self.action_dim),
-                        'HalfCheetah-v2': 1./float(self.action_dim),
+                        'HalfCheetah-v2': 300./float(self.action_dim),
                         'Hopper-v2': 1.0/float(self.action_dim),
                         'Swimmer-v2': 1./float(self.action_dim),
                         'Walker2d-v2': 1.0/float(self.action_dim),
@@ -202,11 +202,21 @@ class GRAC(GRAC_base):
                         'Ant-v2': 0.01,
                         'Humanoid-v2': 0.01,
                         'HalfCheetah-v2': 0.02,
-                        'Hopper-v2': 0.0,
+                        'Hopper-v2': 0.01,
                         'Swimmer-v2': 0.01,
                         'Walker2d-v2': 0.01,
 		}
 		self.expl_coef = CEM_LOSS_COEF[env]
+
+		SELECT_ACTION_COEF = { 
+                        'Ant-v2': 0.5,
+                        'Humanoid-v2': 0.95,
+                        'HalfCheetah-v2': 0.1,
+                        'Hopper-v2': 1.0,
+                        'Swimmer-v2': 1.0,
+                        'Walker2d-v2': 1.0,
+		}
+		self.selection_action_coef = SELECT_ACTION_COEF[env]
 
 
 	def select_action(self, state, writer=None, test=False):
@@ -214,7 +224,7 @@ class GRAC(GRAC_base):
 		if test is False:
 			with torch.no_grad():
 				action, _ , mean, sigma = self.actor.forward_all(state)
-				ceof = 0.95 - min(0.9, float(self.total_it) * 10.0/float(self.max_timesteps))
+				ceof = self.selection_action_coef - min(self.selection_action_coef-0.05, float(self.total_it) * 10.0/float(self.max_timesteps))
 				writer.add_scalar('train/ceof_select_action',ceof, self.total_it)
 				if np.random.uniform(0,1) < ceof:
 					better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=1)
