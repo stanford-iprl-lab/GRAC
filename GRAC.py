@@ -206,8 +206,8 @@ class GRAC(GRAC_base):
                         'Swimmer-v2': 0.01,
                         'Walker2d-v2': 0.01,
 		}
-		self.expl_coef = CEM_LOSS_COEF[env]
-
+		self.expl_coef = float(EXPL_COEF[env])
+		
 		SELECT_ACTION_COEF = { 
                         'Ant-v2': 0.5,
                         'Humanoid-v2': 0.95,
@@ -390,9 +390,10 @@ class GRAC(GRAC_base):
 			adv = (q_better_action - q_actor_action).detach()
 			adv = torch.max(torch.zeros_like(adv),adv)
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
+			expl_ceof = self.expl_coef * (1 - float(self.total_it)/self.max_timesteps)
 			if log_it:
 				writer.add_scalar('train_actor/cem_loss_ceof', self.cem_loss_coef, self.total_it)
-			expl_ceof = self.expl_coef * (1 - float(self.total_it)/self.max_timesteps)
+				writer.add_scalar('train/expl_ceof',expl_ceof,self.total_it)
 			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action + expl_ceof * torch.log(action_sigma).sum(1,keepdim=True)).mean()
 
 			# Optimize the actor 
