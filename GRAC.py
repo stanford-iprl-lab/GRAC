@@ -116,7 +116,7 @@ class GRAC(GRAC_base):
 		ACTOR_LR  = {
             		'Ant-v2': 1e-4,
             		'Humanoid-v2': 1e-4,
-            		'HalfCheetah-v2': 1e-3,
+            		'HalfCheetah-v2': 3e-3,
             		'Hopper-v2': 2e-4,
             		'Swimmer-v2': 2e-4,
             		'Walker2d-v2': 1e-4,
@@ -129,7 +129,7 @@ class GRAC(GRAC_base):
 		CRITIC_LR  = {
 	            'Ant-v2': 1e-4,
         	    'Humanoid-v2': 3e-4,
-	            'HalfCheetah-v2': 1e-3,
+	            'HalfCheetah-v2': 6e-4,
        	            'Hopper-v2': 2e-4,
            	    'Swimmer-v2': 2e-4,
                     'Walker2d-v2': 1e-4,
@@ -211,7 +211,7 @@ class GRAC(GRAC_base):
 		SELECT_ACTION_COEF = { 
                         'Ant-v2': 0.5,
                         'Humanoid-v2': 0.95,
-                        'HalfCheetah-v2': 0.05,
+                        'HalfCheetah-v2': 0.1,
                         'Hopper-v2': 1.0,
                         'Swimmer-v2': 1.0,
                         'Walker2d-v2': 1.0,
