@@ -116,7 +116,7 @@ class GRAC(GRAC_base):
 		ACTOR_LR  = {
             		'Ant-v2': 1e-4,
             		'Humanoid-v2': 1e-4,
-            		'HalfCheetah-v2': 3e-3,
+            		'HalfCheetah-v2': 1e-3,
             		'Hopper-v2': 2e-4,
             		'Swimmer-v2': 2e-4,
             		'Walker2d-v2': 1e-4,
@@ -129,7 +129,7 @@ class GRAC(GRAC_base):
 		CRITIC_LR  = {
 	            'Ant-v2': 1e-4,
         	    'Humanoid-v2': 3e-4,
-	            'HalfCheetah-v2': 6e-4,
+	            'HalfCheetah-v2': 2e-4,
        	            'Hopper-v2': 2e-4,
            	    'Swimmer-v2': 2e-4,
                     'Walker2d-v2': 1e-4,
@@ -149,7 +149,7 @@ class GRAC(GRAC_base):
 		THIRD_LOSS_BOUND = {
 	             'Ant-v2': 0.75,
         	     'Humanoid-v2': 0.85,
-             	     'HalfCheetah-v2': 0.85,
+             	     'HalfCheetah-v2': 0.9,
             	     'Hopper-v2': 0.85,
                      'Swimmer-v2': 0.75,
                      'Walker2d-v2': 0.85,
@@ -159,7 +159,7 @@ class GRAC(GRAC_base):
 		THIRD_LOSS_BOUND_END = {
                      'Ant-v2': 0.85,
                      'Humanoid-v2': 0.9,
-                     'HalfCheetah-v2': 0.9,
+                     'HalfCheetah-v2': 0.95,
                      'Hopper-v2': 0.9,
                      'Swimmer-v2': 0.9,
                      'Walker2d-v2': 0.9,
@@ -190,7 +190,7 @@ class GRAC(GRAC_base):
 		CEM_LOSS_COEF = {
                         'Ant-v2': 1./float(self.action_dim),
                         'Humanoid-v2': 1./float(self.action_dim),
-                        'HalfCheetah-v2': 1./float(self.action_dim),
+                        'HalfCheetah-v2': 100./float(self.action_dim),
                         'Hopper-v2': 1.0/float(self.action_dim),
                         'Swimmer-v2': 1./float(self.action_dim),
                         'Walker2d-v2': 1.0/float(self.action_dim),
@@ -201,7 +201,7 @@ class GRAC(GRAC_base):
 		EXPL_COEF = {
                         'Ant-v2': 0.01,
                         'Humanoid-v2': 0.01,
-                        'HalfCheetah-v2': 0.2,
+                        'HalfCheetah-v2': 0.0,
                         'Hopper-v2': 0.01,
                         'Swimmer-v2': 0.01,
                         'Walker2d-v2': 0.01,
@@ -211,7 +211,7 @@ class GRAC(GRAC_base):
 		SELECT_ACTION_COEF = { 
                         'Ant-v2': 0.5,
                         'Humanoid-v2': 0.95,
-                        'HalfCheetah-v2': 0.1,
+                        'HalfCheetah-v2': 0.05,
                         'Hopper-v2': 1.0,
                         'Swimmer-v2': 1.0,
                         'Walker2d-v2': 1.0,
@@ -258,7 +258,7 @@ class GRAC(GRAC_base):
 
 			# Select action according to policy and add clipped noise
 			next_action, _, next_mean, next_sigma = self.actor.forward_all(next_state)
-			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action,n_iter=1)
+			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action,n_iter=np.random.randint(1,4))
 
 			target_Q1, target_Q2 = self.critic(next_state, next_action)
 			target_Q = torch.min(target_Q1, target_Q2)
