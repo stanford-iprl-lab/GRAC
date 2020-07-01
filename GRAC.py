@@ -27,8 +27,8 @@ class Actor(nn.Module):
 		self.state_dim = state_dim
 
 	def forward(self, state, *args):
-		a = F.relu(self.l1(state))
-		a = F.relu(self.l2(a))
+		a = F.leaky_relu(self.l1(state))
+		a = F.leaky_relu(self.l2(a))
 		mean = self.max_action * torch.tanh(self.l3_mean(a))
 		sigma = (F.softplus(self.l3_sigma(a)) + 0.001).clamp(0.001,2.0*self.max_action)
 		normal = Normal(mean, sigma)
@@ -36,8 +36,8 @@ class Actor(nn.Module):
 		return action
 
 	def forward_all(self, state, *args):
-		a = F.relu(self.l1(state))
-		a = F.relu(self.l2(a))
+		a = F.leaky_relu(self.l1(state))
+		a = F.leaky_relu(self.l2(a))
 		mean = self.max_action * torch.tanh(self.l3_mean(a))
 		sigma = (F.softplus(self.l3_sigma(a)) + 0.001).clamp(0.001,2.0*self.max_action)
 		normal = Normal(mean, sigma)
@@ -65,12 +65,12 @@ class Critic(nn.Module):
 
 		sa = torch.cat([state, action], len(action.shape)-1)
 
-		q1 = F.relu(self.l1(sa))
-		q1 = F.relu(self.l2(q1))
+		q1 = F.leaky_relu(self.l1(sa))
+		q1 = F.leaky_relu(self.l2(q1))
 		q1 = self.l3(q1)
 
-		q2 = F.relu(self.l4(sa))
-		q2 = F.relu(self.l5(q2))
+		q2 = F.leaky_relu(self.l4(sa))
+		q2 = F.leaky_relu(self.l5(q2))
 		q2 = self.l6(q2)
 		return q1, q2
 
@@ -78,16 +78,16 @@ class Critic(nn.Module):
 	def Q1(self, state, action):
 		sa = torch.cat([state, action], len(action.shape)-1)
 
-		q1 = F.relu(self.l1(sa))
-		q1 = F.relu(self.l2(q1))
+		q1 = F.leaky_relu(self.l1(sa))
+		q1 = F.leaky_relu(self.l2(q1))
 		q1 = self.l3(q1)
 		return q1
 
 	def Q2(self, state, action):
 		sa = torch.cat([state, action], len(action.shape)-1)
 
-		q2 = F.relu(self.l4(sa))
-		q2 = F.relu(self.l5(q2))
+		q2 = F.leaky_relu(self.l4(sa))
+		q2 = F.leaky_relu(self.l5(q2))
 		q2 = self.l6(q2)
 		return q2
 
