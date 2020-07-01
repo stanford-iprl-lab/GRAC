@@ -211,7 +211,7 @@ class GRAC(GRAC_base):
 		SELECT_ACTION_COEF = { 
                         'Ant-v2': 0.5,
                         'Humanoid-v2': 0.95,
-                        'HalfCheetah-v2': 0.05,
+                        'HalfCheetah-v2': 0.2,
                         'Hopper-v2': 1.0,
                         'Swimmer-v2': 1.0,
                         'Walker2d-v2': 1.0,
@@ -258,7 +258,7 @@ class GRAC(GRAC_base):
 
 			# Select action according to policy and add clipped noise
 			next_action, _, next_mean, next_sigma = self.actor.forward_all(next_state)
-			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action,n_iter=np.random.randint(1,4))
+			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action,n_iter=1)#np.random.randint(1,4))
 
 			target_Q1, target_Q2 = self.critic(next_state, next_action)
 			target_Q = torch.min(target_Q1, target_Q2)
@@ -387,7 +387,7 @@ class GRAC(GRAC_base):
 			q_better_action = self.critic.Q1(state, better_action)
 			log_prob_better_action = m.log_prob(better_action).sum(1,keepdim=True)
 
-			adv = (q_better_action - q_actor_action).detach()
+			adv = (q_better_action - self.critic.Q1(state, actor_action)).detach()
 			adv = torch.max(torch.zeros_like(adv),adv)
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
 			expl_ceof = self.expl_coef * (1 - float(self.total_it)/self.max_timesteps)
