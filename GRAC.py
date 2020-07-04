@@ -27,8 +27,8 @@ class Actor(nn.Module):
 		self.state_dim = state_dim
 
 	def forward(self, state, *args):
-		a = F.leaky_relu(self.l1(state))
-		a = F.leaky_relu(self.l2(a))
+		a = F.relu(self.l1(state))
+		a = F.relu(self.l2(a))
 		mean = self.max_action * torch.tanh(self.l3_mean(a))
 		sigma = (F.softplus(self.l3_sigma(a)) + 0.001).clamp(0.001,2.0*self.max_action)
 		normal = Normal(mean, sigma)
@@ -36,8 +36,8 @@ class Actor(nn.Module):
 		return action
 
 	def forward_all(self, state, *args):
-		a = F.leaky_relu(self.l1(state))
-		a = F.leaky_relu(self.l2(a))
+		a = F.relu(self.l1(state))
+		a = F.relu(self.l2(a))
 		mean = self.max_action * torch.tanh(self.l3_mean(a))
 		sigma = (F.softplus(self.l3_sigma(a)) + 0.001).clamp(0.001,2.0*self.max_action)
 		normal = Normal(mean, sigma)
@@ -65,12 +65,12 @@ class Critic(nn.Module):
 
 		sa = torch.cat([state, action], len(action.shape)-1)
 
-		q1 = F.leaky_relu(self.l1(sa))
-		q1 = F.leaky_relu(self.l2(q1))
+		q1 = F.relu(self.l1(sa))
+		q1 = F.relu(self.l2(q1))
 		q1 = self.l3(q1)
 
-		q2 = F.leaky_relu(self.l4(sa))
-		q2 = F.leaky_relu(self.l5(q2))
+		q2 = F.relu(self.l4(sa))
+		q2 = F.relu(self.l5(q2))
 		q2 = self.l6(q2)
 		return q1, q2
 
@@ -78,16 +78,16 @@ class Critic(nn.Module):
 	def Q1(self, state, action):
 		sa = torch.cat([state, action], len(action.shape)-1)
 
-		q1 = F.leaky_relu(self.l1(sa))
-		q1 = F.leaky_relu(self.l2(q1))
+		q1 = F.relu(self.l1(sa))
+		q1 = F.relu(self.l2(q1))
 		q1 = self.l3(q1)
 		return q1
 
 	def Q2(self, state, action):
 		sa = torch.cat([state, action], len(action.shape)-1)
 
-		q2 = F.leaky_relu(self.l4(sa))
-		q2 = F.leaky_relu(self.l5(q2))
+		q2 = F.relu(self.l4(sa))
+		q2 = F.relu(self.l5(q2))
 		q2 = self.l6(q2)
 		return q2
 
@@ -116,8 +116,8 @@ class GRAC(GRAC_base):
 		ACTOR_LR  = {
             		'Ant-v2': 1e-4,
             		'Humanoid-v2': 1e-4,
-            		'HalfCheetah-v2': 2e-3, #1e-3
-            		'Hopper-v2': 2e-4,
+            		'HalfCheetah-v2': 1e-3, #1e-3
+            		'Hopper-v2': 1e-4,
             		'Swimmer-v2': 2e-4,
             		'Walker2d-v2': 1e-4,
 		}
@@ -129,10 +129,10 @@ class GRAC(GRAC_base):
 		CRITIC_LR  = {
 	            'Ant-v2': 1e-4,
         	    'Humanoid-v2': 3e-4,
-	            'HalfCheetah-v2': 2e-4,
-       	            'Hopper-v2': 2e-4,
+	            'HalfCheetah-v2': 2e-4,#2e-4
+       	        'Hopper-v2': 1e-4,
            	    'Swimmer-v2': 2e-4,
-                    'Walker2d-v2': 1e-4,
+                'Walker2d-v2': 1e-4,
 		}
 
 		self.critic_lr =  CRITIC_LR[env]
@@ -149,7 +149,7 @@ class GRAC(GRAC_base):
 		THIRD_LOSS_BOUND = {
 	             'Ant-v2': 0.75,
         	     'Humanoid-v2': 0.85,
-             	     'HalfCheetah-v2': 0.9,
+             	     'HalfCheetah-v2': 0.95,
             	     'Hopper-v2': 0.85,
                      'Swimmer-v2': 0.75,
                      'Walker2d-v2': 0.85,
@@ -159,7 +159,7 @@ class GRAC(GRAC_base):
 		THIRD_LOSS_BOUND_END = {
                      'Ant-v2': 0.85,
                      'Humanoid-v2': 0.9,
-                     'HalfCheetah-v2': 0.95,
+                     'HalfCheetah-v2': 0.99,
                      'Hopper-v2': 0.9,
                      'Swimmer-v2': 0.9,
                      'Walker2d-v2': 0.9,
@@ -190,7 +190,7 @@ class GRAC(GRAC_base):
 		CEM_LOSS_COEF = {
                         'Ant-v2': 1./float(self.action_dim),
                         'Humanoid-v2': 1./float(self.action_dim),
-                        'HalfCheetah-v2': 100./float(self.action_dim), # 100
+                        'HalfCheetah-v2': 50./float(self.action_dim), # 100
                         'Hopper-v2': 1.0/float(self.action_dim),
                         'Swimmer-v2': 1./float(self.action_dim),
                         'Walker2d-v2': 1.0/float(self.action_dim),
@@ -211,7 +211,7 @@ class GRAC(GRAC_base):
 		SELECT_ACTION_COEF = { 
                         'Ant-v2': 0.5,
                         'Humanoid-v2': 0.95,
-                        'HalfCheetah-v2': 0.3, #0.2
+                        'HalfCheetah-v2': 0.2, #0.2
                         'Hopper-v2': 1.0,
                         'Swimmer-v2': 1.0,
                         'Walker2d-v2': 1.0,
@@ -225,7 +225,6 @@ class GRAC(GRAC_base):
 			with torch.no_grad():
 				action, _ , mean, sigma = self.actor.forward_all(state)
 				ceof = self.selection_action_coef - min(self.selection_action_coef-0.05, float(self.total_it) * 10.0/float(self.max_timesteps))
-				writer.add_scalar('train/ceof_select_action',ceof, self.total_it)
 				if np.random.uniform(0,1) < ceof:
 					better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=1)
 					Q1, Q2 = self.critic(state, action)
@@ -390,10 +389,10 @@ class GRAC(GRAC_base):
 			adv = (q_better_action - self.critic.Q1(state, actor_action)).detach()
 			adv = torch.max(torch.zeros_like(adv),adv)
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
-			expl_ceof = self.expl_coef * (1 - float(self.total_it)/self.max_timesteps)
+			expl_ceof = self.expl_coef * (self.selection_action_coef - min(self.selection_action_coef, float(self.total_it) * 5.0/float(self.max_timesteps)))
 			if log_it:
 				writer.add_scalar('train_actor/cem_loss_ceof', self.cem_loss_coef, self.total_it)
-				writer.add_scalar('train/expl_ceof',expl_ceof,self.total_it)
+			writer.add_scalar('train/expl_ceof',expl_ceof,self.total_it)
 			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action + expl_ceof * torch.log(action_sigma).sum(1,keepdim=True)).mean()
 
 			# Optimize the actor 
