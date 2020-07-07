@@ -116,7 +116,7 @@ class GRAC(GRAC_base):
 		ACTOR_LR  = {
             		'Ant-v2': 1e-4,
             		'Humanoid-v2': 1e-4,
-            		'HalfCheetah-v2': 1e-3, #1e-3
+            		'HalfCheetah-v2': 2e-3, #1e-3
             		'Hopper-v2': 1e-4,
             		'Swimmer-v2': 2e-4,
             		'Walker2d-v2': 1e-4,
@@ -149,7 +149,7 @@ class GRAC(GRAC_base):
 		THIRD_LOSS_BOUND = {
 	             'Ant-v2': 0.75,
         	     'Humanoid-v2': 0.85,
-             	     'HalfCheetah-v2': 0.95,
+             	     'HalfCheetah-v2': 0.9,
             	     'Hopper-v2': 0.85,
                      'Swimmer-v2': 0.75,
                      'Walker2d-v2': 0.85,
@@ -159,7 +159,7 @@ class GRAC(GRAC_base):
 		THIRD_LOSS_BOUND_END = {
                      'Ant-v2': 0.85,
                      'Humanoid-v2': 0.9,
-                     'HalfCheetah-v2': 0.99,
+                     'HalfCheetah-v2': 0.925,
                      'Hopper-v2': 0.9,
                      'Swimmer-v2': 0.9,
                      'Walker2d-v2': 0.9,
@@ -225,6 +225,7 @@ class GRAC(GRAC_base):
 			with torch.no_grad():
 				action, _ , mean, sigma = self.actor.forward_all(state)
 				ceof = self.selection_action_coef - min(self.selection_action_coef-0.05, float(self.total_it) * 10.0/float(self.max_timesteps))
+				writer.add_scalar('train/ceof',ceof,self.total_it)
 				if np.random.uniform(0,1) < ceof:
 					better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=1)
 					Q1, Q2 = self.critic(state, action)
@@ -359,6 +360,8 @@ class GRAC(GRAC_base):
 				cond2 = 1
 				break
 		writer.add_scalar('train_critic/third_loss_num', idi, self.total_it)
+		if log_it:
+			writer.add_scalar('train/bound',bound,self.total_it)
 		if log_it:
 			writer.add_scalar('train_critic/third_loss_cond1', cond1, self.total_it)
 			writer.add_scalar('train_critic/third_loss_cond2', cond2, self.total_it)
