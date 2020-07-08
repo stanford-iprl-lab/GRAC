@@ -116,8 +116,8 @@ class GRAC(GRAC_base):
 		ACTOR_LR  = {
             		'Ant-v2': 1e-4,
             		'Humanoid-v2': 1e-4,
-            		'HalfCheetah-v2': 2e-3, #1e-3
-            		'Hopper-v2': 1e-4,
+            		'HalfCheetah-v2': 2e-3, #1.9e-3#1e-3
+            		'Hopper-v2': 1e-5,
             		'Swimmer-v2': 2e-4,
             		'Walker2d-v2': 1e-4,
 		}
@@ -157,9 +157,9 @@ class GRAC(GRAC_base):
 		self.third_loss_bound = THIRD_LOSS_BOUND[env]
 
 		THIRD_LOSS_BOUND_END = {
-                     'Ant-v2': 0.85,
+                     'Ant-v2': 0.8,
                      'Humanoid-v2': 0.9,
-                     'HalfCheetah-v2': 0.925,
+                     'HalfCheetah-v2': 0.95,
                      'Hopper-v2': 0.9,
                      'Swimmer-v2': 0.9,
                      'Walker2d-v2': 0.9,
