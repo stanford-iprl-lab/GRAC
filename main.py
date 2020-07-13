@@ -184,7 +184,7 @@ if __name__ == "__main__":
 			writer.add_scalar('train_early_stage/reward_max', reward_max, t)
 			writer.add_scalar('train_early_stage/reward_range',reward_range, t)
 		# Store data in replay buffer
-		replay_buffer.add(state, action, next_state, reward/2.0, done_bool)
+		replay_buffer.add(state, action, next_state, reward, done_bool)
 
 		state = next_state
 		episode_reward += reward
