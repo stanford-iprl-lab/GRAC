@@ -227,7 +227,7 @@ class GRAC(GRAC_base):
 				ceof = self.selection_action_coef - min(self.selection_action_coef-0.05, float(self.total_it) * 10.0/float(self.max_timesteps))
 				writer.add_scalar('train/ceof',ceof,self.total_it)
 				if np.random.uniform(0,1) < ceof:
-					better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=2)
+					better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=1)
 					Q1, Q2 = self.critic(state, action)
 					Q = torch.min(Q1, Q2)
 					better_Q1, better_Q2 = self.critic(state, better_action)
@@ -258,7 +258,7 @@ class GRAC(GRAC_base):
 
 			# Select action according to policy and add clipped noise
 			next_action, _, next_mean, next_sigma = self.actor.forward_all(next_state)
-			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action,n_iter=2)#np.random.randint(1,4))
+			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action,n_iter=1)#np.random.randint(1,4))
 
 			target_Q1, target_Q2 = self.critic(next_state, next_action)
 			target_Q = torch.min(target_Q1, target_Q2)
