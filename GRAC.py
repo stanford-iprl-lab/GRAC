@@ -127,12 +127,12 @@ class GRAC(GRAC_base):
 		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
 		
 		CRITIC_LR  = {
-	            'Ant-v2': 1e-4,
+	            'Ant-v2': 3e-4,
         	    'Humanoid-v2': 3e-4,
 	            'HalfCheetah-v2': 3e-4,#2e-4
-       	        'Hopper-v2': 1e-4,
-           	    'Swimmer-v2': 2e-4,
-                'Walker2d-v2': 1e-4,
+                    'Hopper-v2': 3e-4,
+           	    'Swimmer-v2': 3e-4,
+                    'Walker2d-v2': 3e-4,
 		}
 
 		self.critic_lr =  CRITIC_LR[env]
@@ -147,17 +147,17 @@ class GRAC(GRAC_base):
 		self.log_freq = 200
 
 		THIRD_LOSS_BOUND = {
-	             'Ant-v2': 0.85,
+	             'Ant-v2': 0.75,
         	     'Humanoid-v2': 0.85,
-             	 'HalfCheetah-v2': 0.9,
-            	 'Hopper-v2': 0.85,
-                 'Swimmer-v2': 0.75,
-                 'Walker2d-v2': 0.85,
+                	 'HalfCheetah-v2': 0.9,
+                	 'Hopper-v2': 0.85,
+                     'Swimmer-v2': 0.75,
+                      'Walker2d-v2': 0.85,
 		}
 		self.third_loss_bound = THIRD_LOSS_BOUND[env]
 
 		THIRD_LOSS_BOUND_END = {
-                     'Ant-v2': 0.9,
+                     'Ant-v2': 0.85,
                      'Humanoid-v2': 0.9,
                      'HalfCheetah-v2': 0.95,
                      'Hopper-v2': 0.9,
@@ -177,7 +177,7 @@ class GRAC(GRAC_base):
 		self.max_timesteps = MAX_TIMESTEPS[env]
 
 		MAX_ITER_STEPS = {
-                        'Ant-v2': 20,
+                        'Ant-v2': 100,
                         'Humanoid-v2': 100,
                         'HalfCheetah-v2': 100,
                         'Hopper-v2': 100,
@@ -188,7 +188,7 @@ class GRAC(GRAC_base):
 		self.max_iter_steps = MAX_ITER_STEPS[env]
 
 		CEM_LOSS_COEF = {
-                        'Ant-v2': 10./float(self.action_dim),
+                        'Ant-v2': 1./float(self.action_dim),
                         'Humanoid-v2': 1./float(self.action_dim),
                         'HalfCheetah-v2': 1./float(self.action_dim), # 100
                         'Hopper-v2': 1.0/float(self.action_dim),
@@ -209,8 +209,8 @@ class GRAC(GRAC_base):
 		self.expl_coef = float(EXPL_COEF[env])
 		
 		SELECT_ACTION_COEF = { 
-                        'Ant-v2': 0.5,
-                        'Humanoid-v2': 0.95,
+                        'Ant-v2': 1.0,
+                        'Humanoid-v2': 1.0,
                         'HalfCheetah-v2': 0.2, #0.2
                         'Hopper-v2': 1.0,
                         'Swimmer-v2': 1.0,
