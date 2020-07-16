@@ -114,12 +114,12 @@ class GRAC(GRAC_base):
 		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, noise_clip, policy_freq, device)
 
 		ACTOR_LR  = {
-            		'Ant-v2': 1e-4,
-            		'Humanoid-v2': 1e-4,
-            		'HalfCheetah-v2': 2e-3, #1.9e-3#1e-3
-            		'Hopper-v2': 1e-5,
+            		'Ant-v2': 3e-4,
+            	        'Humanoid-v2': 3e-3,
+            		'HalfCheetah-v2': 3e-3, #1.9e-3#1e-3
+            		'Hopper-v2': 2e-4,
             		'Swimmer-v2': 2e-4,
-            		'Walker2d-v2': 1e-4,
+            		'Walker2d-v2': 2e-4,
 		}
 		self.actor_lr =  ACTOR_LR[env]
 
@@ -147,22 +147,22 @@ class GRAC(GRAC_base):
 		self.log_freq = 200
 
 		THIRD_LOSS_BOUND = {
-	             'Ant-v2': 0.75,
+	             'Ant-v2': 0.7,
         	     'Humanoid-v2': 0.85,
-                	 'HalfCheetah-v2': 0.9,
-                	 'Hopper-v2': 0.85,
+                     'HalfCheetah-v2': 0.9,
+                     'Hopper-v2': 0.85,
                      'Swimmer-v2': 0.75,
-                      'Walker2d-v2': 0.85,
+                     'Walker2d-v2': 0.85,
 		}
 		self.third_loss_bound = THIRD_LOSS_BOUND[env]
 
 		THIRD_LOSS_BOUND_END = {
-                     'Ant-v2': 0.85,
+                     'Ant-v2': 0.9,
                      'Humanoid-v2': 0.9,
                      'HalfCheetah-v2': 0.95,
-                     'Hopper-v2': 0.9,
+                     'Hopper-v2': 0.95,
                      'Swimmer-v2': 0.9,
-                     'Walker2d-v2': 0.9,
+                     'Walker2d-v2': 0.95,
 		}
 		self.third_loss_bound_end = THIRD_LOSS_BOUND_END[env]
 	
@@ -177,12 +177,12 @@ class GRAC(GRAC_base):
 		self.max_timesteps = MAX_TIMESTEPS[env]
 
 		MAX_ITER_STEPS = {
-                        'Ant-v2': 100,
-                        'Humanoid-v2': 100,
+                        'Ant-v2': 20,
+                        'Humanoid-v2': 20,
                         'HalfCheetah-v2': 100,
-                        'Hopper-v2': 100,
+                        'Hopper-v2': 20,
                         'Swimmer-v2': 100,
-                        'Walker2d-v2': 100,
+                        'Walker2d-v2': 20,
 		}
 
 		self.max_iter_steps = MAX_ITER_STEPS[env]
@@ -227,7 +227,7 @@ class GRAC(GRAC_base):
 				ceof = self.selection_action_coef - min(self.selection_action_coef-0.05, float(self.total_it) * 10.0/float(self.max_timesteps))
 				writer.add_scalar('train/ceof',ceof,self.total_it)
 				if np.random.uniform(0,1) < ceof:
-					better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=1)
+					better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=2)
 					Q1, Q2 = self.critic(state, action)
 					Q = torch.min(Q1, Q2)
 					better_Q1, better_Q2 = self.critic(state, better_action)
@@ -255,10 +255,9 @@ class GRAC(GRAC_base):
 		state, action, next_state, reward, not_done = replay_buffer.sample(batch_size)
 
 		with torch.no_grad():
-
 			# Select action according to policy and add clipped noise
 			next_action, _, next_mean, next_sigma = self.actor.forward_all(next_state)
-			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action,n_iter=1)#np.random.randint(1,4))
+			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action,n_iter=2)#np.random.randint(1,4))
 
 			target_Q1, target_Q2 = self.critic(next_state, next_action)
 			target_Q = torch.min(target_Q1, target_Q2)
@@ -334,7 +333,7 @@ class GRAC(GRAC_base):
 		critic_loss3 = F.mse_loss(current_Q1_, target_Q_final) + F.mse_loss(current_Q2_, target_Q_final) + F.mse_loss(target_Q1_, target_Q1) + F.mse_loss(target_Q2_, target_Q2)
 		self.update_critic(critic_loss3)
 		prev_prev_critic_loss3 = critic_loss3.clone() * 1.0 
-		init_critic_loss3 = critic_loss.clone()
+		init_critic_loss3 = critic_loss3.clone()
 		ratio = 0.0
 		max_step = 0
 		writer.add_scalar('train_critic/third_violation_max_loss3_init',torch.max(loss3_max_init), self.total_it)
@@ -374,10 +373,10 @@ class GRAC(GRAC_base):
 			after_current_Q1, after_current_Q2 = self.critic(state, action)
 
 		critic_loss = F.mse_loss(current_Q1, target_Q_final) + F.mse_loss(current_Q2, target_Q_final)
-		weights_actor_lr = (abs(current_Q1_ - target_Q_final) + abs(current_Q2_- target_Q_final)).mean().detach()
+		weights_actor_lr = critic_loss.detach()#(abs(current_Q1_ - target_Q_final) + abs(current_Q2_- target_Q_final)).mean().detach()
 		writer.add_scalar('train/weights_actor_lr',weights_actor_lr,self.total_it)
 		if self.total_it % 1 == 0:
-			lr_tmp = self.actor_lr / (float(weights_actor_lr)+1.0)
+			lr_tmp = self.actor_lr / (float(critic_loss) + 1.0)#(float(weights_actor_lr)+1.0)
 			self.actor_optimizer = self.lr_scheduler(self.actor_optimizer, lr_tmp)
 
 			# Compute actor loss
