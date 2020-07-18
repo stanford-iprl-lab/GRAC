@@ -10,7 +10,7 @@ class CEM:
 	def __init__(self, num_params,
 				mu_init=None,
 				batch_size=256,
-				cov=1e-3,
+				sigma_init=1e-3,
 				clip=0.5,
 				pop_size=256,
 				damp=1e-3,
@@ -19,6 +19,7 @@ class CEM:
 				elitism=True,
 				device=torch.device('cuda')
 				):
+
 		# misc
 		self.num_params = num_params
 		self.batch_size = batch_size
@@ -28,11 +29,11 @@ class CEM:
 			self.mu = torch.zeros([self.batch_size, self.num_params], device=device)
 		else:
 			self.mu = mu_init.clone()
-		self.sigma = 0.1#sigma_init
+		self.sigma = sigma_init
 		self.damp = damp
 		self.damp_limit = damp_limit
 		self.tau = 0.95
-		self.cov = cov#self.sigma * torch.ones([self.batch_size, self.num_params], device=device)
+		self.cov = self.sigma * torch.ones([self.batch_size, self.num_params], device=device)
 		self.clip = clip 
 		
 		# elite stuff
@@ -100,10 +101,10 @@ class Searcher():
 				batch_size=256,
 				sigma_init=1e-3,
 				clip=0.5,
-				pop_size=32,
+				pop_size=25,
 				damp=0.1,
 				damp_limit=0.05,
-				parents=8,
+				parents=5,
 				device=torch.device('cuda')):
 		self.sigma_init = sigma_init
 		self.clip=clip
@@ -116,10 +117,10 @@ class Searcher():
 		self.max_action = max_action
 		self.device = device
 
-	def search(self, state, action_init, critic, batch_size=None, n_iter=2, action_bound=True, cov=None, sampled_action=None):
+	def search(self, state, action_init, critic, batch_size=None, n_iter=2, action_bound=True):
 		if batch_size is None:
 			batch_size = self.batch_size
-		cem = CEM(self.action_dim, action_init, batch_size, cov, self.clip * self.max_action, self.pop_size, self.damp, self.damp_limit, self.parents, device=self.device)
+		cem = CEM(self.action_dim, action_init, batch_size, self.sigma_init, self.clip, self.pop_size, self.damp, self.damp_limit, self.parents, device=self.device)
 		with torch.no_grad():
 			for iter in range(n_iter):
 				actions = cem.ask(self.pop_size)
@@ -130,8 +131,10 @@ class Searcher():
 				best_action = cem.tell(actions, Qs)
 				if iter == n_iter - 1:
 					best_Q = critic(state, best_action)
-					ori_Q = critic(state, sampled_action)
+					ori_Q = critic(state, action_init)
 
 					action_index = (best_Q < ori_Q).squeeze()
-					best_action[action_index] = sampled_action[action_index]
+					best_action[action_index] = action_init[action_index]
+					# best_Q = torch.max(ori_Q, best_Q)
+
 					return best_action

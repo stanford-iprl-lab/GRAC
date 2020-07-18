@@ -12,7 +12,9 @@ import datetime
 import os
 # Implementation of Self-Guided and Self-Regularized Actor-Critic Algorithm.
 
+
 epsilon = 1e-6
+
 
 class Actor(nn.Module):
 	def __init__(self, state_dim, action_dim, max_action):
@@ -30,7 +32,7 @@ class Actor(nn.Module):
 		a = F.relu(self.l1(state))
 		a = F.relu(self.l2(a))
 		mean = self.max_action * torch.tanh(self.l3_mean(a))
-		sigma = (F.softplus(self.l3_sigma(a)) + 0.001).clamp(0.001,2.0*self.max_action)
+		sigma = F.softplus(self.l3_sigma(a)) + 0.001
 		normal = Normal(mean, sigma)
 		action = normal.rsample().clamp(-self.max_action, self.max_action)
 		return action
@@ -39,7 +41,7 @@ class Actor(nn.Module):
 		a = F.relu(self.l1(state))
 		a = F.relu(self.l2(a))
 		mean = self.max_action * torch.tanh(self.l3_mean(a))
-		sigma = (F.softplus(self.l3_sigma(a)) + 0.001).clamp(0.001,2.0*self.max_action)
+		sigma = F.softplus(self.l3_sigma(a)) + 0.001
 		normal = Normal(mean, sigma)
 		action = normal.rsample()
 		log_prob = normal.log_prob(action).sum(1,keepdim=True)
@@ -107,69 +109,58 @@ class GRAC(GRAC_base):
 		policy_freq=2,
 		n_repeat=1,
 		alpha_start=0.7,
-        	alpha_end=0.85,
+        alpha_end=0.85,
 		no_critic_cem=False,
 		device=torch.device('cuda'),
 	):
 		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, noise_clip, policy_freq, device)
 
 		ACTOR_LR  = {
-            		'Ant-v2': 3e-4,
-            	        'Humanoid-v2': 3e-3,
-            		'HalfCheetah-v2': 3e-3, #1.9e-3#1e-3
-            		'Hopper-v2': 2e-4,
-            		'Swimmer-v2': 2e-4,
-            		'Walker2d-v2': 2e-4,
+                    'Ant-v2': 3e-4,
+                    'Humanoid-v2': 3e-3,
+                    'HalfCheetah-v2': 3e-3, #1.9e-3#1e-3
+                    'Hopper-v2': 2e-4,
+                    'Swimmer-v2': 2e-4,
+                    'Walker2d-v2': 2e-4,
 		}
 		self.actor_lr =  ACTOR_LR[env]
 
 		self.actor = Actor(state_dim, action_dim, max_action).to(device)
 		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
-		
-		CRITIC_LR  = {
-	            'Ant-v2': 3e-4,
-        	    'Humanoid-v2': 3e-4,
-	            'HalfCheetah-v2': 3e-4,#2e-4
-                    'Hopper-v2': 3e-4,
-           	    'Swimmer-v2': 3e-4,
-                    'Walker2d-v2': 3e-4,
-		}
-
-		self.critic_lr =  CRITIC_LR[env]
 
 		self.critic = Critic(state_dim, action_dim).to(device)
-		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.critic_lr)
+		self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=3e-4)
 
-		cem_sigma = 1e-2 * self.max_action * self.max_action
-		cem_clip = 0.5 * self.max_action
+		cem_sigma = 1e-2
+		cem_clip = 0.5
 		self.searcher = Searcher(action_dim, max_action, device=device, sigma_init=cem_sigma, clip=cem_clip, batch_size=batch_size)
 		self.action_dim = float(action_dim)
 		self.log_freq = 200
-
+	
 		THIRD_LOSS_BOUND = {
-	             'Ant-v2': 0.7,
-        	     'Humanoid-v2': 0.85,
-                     'HalfCheetah-v2': 0.9,
-                     'Hopper-v2': 0.85,
-                     'Swimmer-v2': 0.75,
-                     'Walker2d-v2': 0.85,
+                        'Ant-v2': 0.7,
+                        'Humanoid-v2': 0.7,
+                        'HalfCheetah-v2': 0.85,
+                        'Hopper-v2': 0.85,
+                        'Swimmer-v2': 0.5,
+                        'Walker2d-v2': 0.85,
 		}
 		self.third_loss_bound = THIRD_LOSS_BOUND[env]
 
 		THIRD_LOSS_BOUND_END = {
-                     'Ant-v2': 0.9,
-                     'Humanoid-v2': 0.9,
-                     'HalfCheetah-v2': 0.95,
-                     'Hopper-v2': 0.95,
-                     'Swimmer-v2': 0.9,
-                     'Walker2d-v2': 0.95,
+                        'Ant-v2': 0.85,
+                        'Humanoid-v2': 0.85,
+                        'HalfCheetah-v2': 0.9,
+                        'Hopper-v2': 0.95,
+                        'Swimmer-v2': 0.75,
+                        'Walker2d-v2': 0.95,
 		}
 		self.third_loss_bound_end = THIRD_LOSS_BOUND_END[env]
 	
 		MAX_TIMESTEPS = {
                         'Ant-v2': 3e6,
-                        'Humanoid-v2': 5e6,
-                        'HalfCheetah-v2': 3e6,
+                        'Humanoid-v2': 6e6,
+                        'HalfCheetah-v2': 6e6,
                         'Hopper-v2': 1e6,
                         'Swimmer-v2': 1e6,
                         'Walker2d-v2': 1e6,
@@ -181,34 +172,14 @@ class GRAC(GRAC_base):
                         'Humanoid-v2': 20,
                         'HalfCheetah-v2': 100,
                         'Hopper-v2': 20,
-                        'Swimmer-v2': 100,
+                        'Swimmer-v2': 20,
                         'Walker2d-v2': 20,
 		}
 
 		self.max_iter_steps = MAX_ITER_STEPS[env]
+		self.cem_loss_coef = 1.0/float(self.action_dim)
 
-		CEM_LOSS_COEF = {
-                        'Ant-v2': 1./float(self.action_dim),
-                        'Humanoid-v2': 1./float(self.action_dim),
-                        'HalfCheetah-v2': 1./float(self.action_dim), # 100
-                        'Hopper-v2': 1.0/float(self.action_dim),
-                        'Swimmer-v2': 1./float(self.action_dim),
-                        'Walker2d-v2': 1.0/float(self.action_dim),
-		}
-
-		self.cem_loss_coef = CEM_LOSS_COEF[env]
-
-		EXPL_COEF = {
-                        'Ant-v2': 0.0,
-                        'Humanoid-v2': 0.0,
-                        'HalfCheetah-v2': 0.0,
-                        'Hopper-v2': 0.0,
-                        'Swimmer-v2': 0.0,
-                        'Walker2d-v2': 0.0,
-		}
-		self.expl_coef = float(EXPL_COEF[env])
-		
-		SELECT_ACTION_COEF = { 
+		SELECT_ACTION_COEF = {
                         'Ant-v2': 1.0,
                         'Humanoid-v2': 1.0,
                         'HalfCheetah-v2': 0.2, #0.2
@@ -223,20 +194,24 @@ class GRAC(GRAC_base):
 		state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
 		if test is False:
 			with torch.no_grad():
-				action, _ , mean, sigma = self.actor.forward_all(state)
+				action = self.actor(state)
 				ceof = self.selection_action_coef - min(self.selection_action_coef-0.05, float(self.total_it) * 10.0/float(self.max_timesteps))
 				writer.add_scalar('train/ceof',ceof,self.total_it)
 				if np.random.uniform(0,1) < ceof:
-					better_action = self.searcher.search(state, mean, self.critic.Q2, batch_size=1, cov=sigma**2, sampled_action=action, n_iter=2)
+					better_action = self.searcher.search(state, action, self.critic.Q2, batch_size=1)
+	
 					Q1, Q2 = self.critic(state, action)
 					Q = torch.min(Q1, Q2)
+	
 					better_Q1, better_Q2 = self.critic(state, better_action)
 					better_Q = torch.min(better_Q1, better_Q2)
+	
 					action_index = (Q > better_Q).squeeze()
 					better_action[action_index] = action[action_index]
 				else:
 					better_action = action
 			return better_action.cpu().data.numpy().flatten()
+
 		else:
 			_, _, action, _ = self.actor.forward_all(state)
 			return action.cpu().data.numpy().flatten()
@@ -255,9 +230,12 @@ class GRAC(GRAC_base):
 		state, action, next_state, reward, not_done = replay_buffer.sample(batch_size)
 
 		with torch.no_grad():
+
 			# Select action according to policy and add clipped noise
-			next_action, _, next_mean, next_sigma = self.actor.forward_all(next_state)
-			better_next_action = self.searcher.search(next_state, next_mean, self.critic.Q2, cov=next_sigma**2,sampled_action=next_action,n_iter=2)#np.random.randint(1,4))
+			next_action = (
+				self.actor(next_state)
+			).clamp(-self.max_action, self.max_action)
+			better_next_action = self.searcher.search(next_state, next_action, self.critic.Q2)
 
 			target_Q1, target_Q2 = self.critic(next_state, next_action)
 			target_Q = torch.min(target_Q1, target_Q2)
@@ -333,6 +311,7 @@ class GRAC(GRAC_base):
 		critic_loss3 = F.mse_loss(current_Q1_, target_Q_final) + F.mse_loss(current_Q2_, target_Q_final) + F.mse_loss(target_Q1_, target_Q1) + F.mse_loss(target_Q2_, target_Q2)
 		self.update_critic(critic_loss3)
 		prev_prev_critic_loss3 = critic_loss3.clone() * 1.0 
+		prev_critic_loss3 = critic_loss3.clone()
 		init_critic_loss3 = critic_loss3.clone()
 		ratio = 0.0
 		max_step = 0
@@ -348,6 +327,9 @@ class GRAC(GRAC_base):
 			loss3_max = torch.pow(current_Q1_ - target_Q_final, 2) + torch.pow(current_Q2_- target_Q_final,2) + torch.pow(target_Q1_- target_Q1, 2) + torch.pow(target_Q2_- target_Q2, 2)
 			critic_loss3 = F.mse_loss(current_Q1_, target_Q_final) + F.mse_loss(current_Q2_, target_Q_final) + F.mse_loss(target_Q1_, target_Q1) + F.mse_loss(target_Q2_, target_Q2)
 			self.update_critic(critic_loss3)
+			if critic_loss3/init_critic_loss3 > ratio:
+				ratio = critic_loss3/init_critic_loss3
+				max_step = idi
 			if self.total_it < self.max_timesteps:
 				bound = self.third_loss_bound + float(self.total_it) / float(self.max_timesteps) * (self.third_loss_bound_end - self.third_loss_bound)
 			else:
@@ -358,9 +340,9 @@ class GRAC(GRAC_base):
 			if idi > self.max_iter_steps:
 				cond2 = 1
 				break
+			prev_prev_critic_loss3 = prev_critic_loss3.clone()
+			prev_critic_loss3 = critic_loss3.clone()
 		writer.add_scalar('train_critic/third_loss_num', idi, self.total_it)
-		if log_it:
-			writer.add_scalar('train/bound',bound,self.total_it)
 		if log_it:
 			writer.add_scalar('train_critic/third_loss_cond1', cond1, self.total_it)
 			writer.add_scalar('train_critic/third_loss_cond2', cond2, self.total_it)
@@ -373,10 +355,11 @@ class GRAC(GRAC_base):
 			after_current_Q1, after_current_Q2 = self.critic(state, action)
 
 		critic_loss = F.mse_loss(current_Q1, target_Q_final) + F.mse_loss(current_Q2, target_Q_final)
-		weights_actor_lr = critic_loss.detach()#(abs(current_Q1_ - target_Q_final) + abs(current_Q2_- target_Q_final)).mean().detach()
+		weights_actor_lr = critic_loss.detach()
 		writer.add_scalar('train/weights_actor_lr',weights_actor_lr,self.total_it)
+
 		if self.total_it % 1 == 0:
-			lr_tmp = self.actor_lr / (float(critic_loss) + 1.0)#(float(weights_actor_lr)+1.0)
+			lr_tmp = self.actor_lr / (float(weights_actor_lr)+1.0)
 			self.actor_optimizer = self.lr_scheduler(self.actor_optimizer, lr_tmp)
 
 			# Compute actor loss
@@ -384,18 +367,16 @@ class GRAC(GRAC_base):
 			q_actor_action = self.critic.Q1(state, actor_action)
 			m = Normal(action_mean, action_sigma)
 
-			better_action = self.searcher.search(state, action_mean, self.critic.Q1, batch_size=batch_size, cov=(action_sigma)**2, sampled_action=actor_action)
+			better_action = self.searcher.search(state, actor_action, self.critic.Q1, batch_size=batch_size)#####
 			q_better_action = self.critic.Q1(state, better_action)
-			log_prob_better_action = m.log_prob(better_action).sum(1,keepdim=True)
+			log_prob_better_action = m.log_prob(better_action)
 
-			adv = (q_better_action - self.critic.Q1(state, actor_action)).detach()
-			adv = torch.max(torch.zeros_like(adv),adv)
+			adv = (q_better_action - q_actor_action).detach()
+			adv = torch.max(adv,torch.zeros_like(adv))
 			cem_loss = log_prob_better_action * torch.min(reward_range * torch.ones_like(adv),adv)
-			expl_ceof = self.expl_coef * (self.selection_action_coef - min(self.selection_action_coef, float(self.total_it) * 5.0/float(self.max_timesteps)))
 			if log_it:
 				writer.add_scalar('train_actor/cem_loss_ceof', self.cem_loss_coef, self.total_it)
-			writer.add_scalar('train/expl_ceof',expl_ceof,self.total_it)
-			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action + expl_ceof * torch.log(action_sigma).sum(1,keepdim=True)).mean()
+			actor_loss = -(cem_loss * self.cem_loss_coef + q_actor_action).mean()
 
 			# Optimize the actor 
 			Q_before_update = self.critic.Q1(state, actor_action)
