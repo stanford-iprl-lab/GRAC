@@ -119,7 +119,7 @@ class GRAC(GRAC_base):
                     'Ant-v2': 3e-4,
                     'Humanoid-v2': 3e-3,
                     'HalfCheetah-v2': 3e-3, #1.9e-3#1e-3
-                    'Hopper-v2': 2e-4,
+                    'Hopper-v2': 1e-4,
                     'Swimmer-v2': 2e-4,
                     'Walker2d-v2': 2e-4,
 		}
@@ -369,7 +369,7 @@ class GRAC(GRAC_base):
 
 			better_action = self.searcher.search(state, actor_action, self.critic.Q1, batch_size=batch_size)#####
 			q_better_action = self.critic.Q1(state, better_action)
-			log_prob_better_action = m.log_prob(better_action)
+			log_prob_better_action = m.log_prob(better_action).sum(1,keepdim=True)
 
 			adv = (q_better_action - q_actor_action).detach()
 			adv = torch.max(adv,torch.zeros_like(adv))
