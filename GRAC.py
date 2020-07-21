@@ -140,7 +140,7 @@ class GRAC(GRAC_base):
 		THIRD_LOSS_BOUND = {
                         'Ant-v2': 0.7,
                         'Humanoid-v2': 0.85,
-                        'HalfCheetah-v2': 0.8,
+                         'HalfCheetah-v2': 0.75,
                         'Hopper-v2': 0.85,
                         'Swimmer-v2': 0.5,
                         'Walker2d-v2': 0.85,
@@ -345,7 +345,7 @@ class GRAC(GRAC_base):
 		writer.add_scalar('train_critic/third_loss_num', idi, self.total_it)
 		if log_it:
 			writer.add_scalar('train_critic/third_loss_cond1', cond1, self.total_it)
-			writer.add_scalar('train_critic/third_loss_cond2', cond2, self.total_it)
+			writer.add_scalar('train/third_loss_bound', bound, self.total_it)
 
 		if log_it:
 			writer.add_scalar("losses/repeat_l1",critic_loss, self.total_it)
