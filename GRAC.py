@@ -118,8 +118,8 @@ class GRAC(GRAC_base):
 		ACTOR_LR  = {
                     'Ant-v2': 3e-4,
                     'Humanoid-v2': 3e-3,
-                    'HalfCheetah-v2': 3e-3, #1.9e-3#1e-3
-                    'Hopper-v2': 5e-5,
+                    'HalfCheetah-v2': 1.5e-2, #1.9e-3#1e-3
+                    'Hopper-v2': 1e-4,
                     'Swimmer-v2': 2e-4,
                     'Walker2d-v2': 2e-4,
 		}
@@ -140,7 +140,7 @@ class GRAC(GRAC_base):
 		THIRD_LOSS_BOUND = {
                         'Ant-v2': 0.7,
                         'Humanoid-v2': 0.85,
-                        'HalfCheetah-v2': 0.85,
+                        'HalfCheetah-v2': 0.8,
                         'Hopper-v2': 0.85,
                         'Swimmer-v2': 0.5,
                         'Walker2d-v2': 0.85,
