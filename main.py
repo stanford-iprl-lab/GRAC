@@ -182,7 +182,7 @@ if __name__ == "__main__":
 		Reward_Scale  = {
                     'Ant-v2': 1.0,
                     'Humanoid-v2': 1.0,
-                    'HalfCheetah-v2': 0.5, #1.9e-3#1e-3
+                    'HalfCheetah-v2': 1.0, #1.9e-3#1e-3
                     'Hopper-v2': 1.0,
                     'Swimmer-v2': 1.0,
                     'Walker2d-v2': 1.0,
