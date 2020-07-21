@@ -117,9 +117,9 @@ class GRAC(GRAC_base):
 
 		ACTOR_LR  = {
                     'Ant-v2': 3e-4,
-                    'Humanoid-v2': 3e-4,
+                    'Humanoid-v2': 3e-3,
                     'HalfCheetah-v2': 3e-3, #1.9e-3#1e-3
-                    'Hopper-v2': 1e-4,
+                    'Hopper-v2': 5e-5,
                     'Swimmer-v2': 2e-4,
                     'Walker2d-v2': 2e-4,
 		}
@@ -169,9 +169,9 @@ class GRAC(GRAC_base):
 
 		MAX_ITER_STEPS = {
                         'Ant-v2': 20,
-                        'Humanoid-v2': 20,
+                        'Humanoid-v2': 1,
                         'HalfCheetah-v2': 100,
-                        'Hopper-v2': 20,
+                        'Hopper-v2': 1,
                         'Swimmer-v2': 20,
                         'Walker2d-v2': 20,
 		}
@@ -182,7 +182,7 @@ class GRAC(GRAC_base):
 		SELECT_ACTION_COEF = {
                         'Ant-v2': 1.0,
                         'Humanoid-v2': 1.0,
-                        'HalfCheetah-v2': 0.2, #0.2
+                        'HalfCheetah-v2': 1.0, #0.2
                         'Hopper-v2': 1.0,
                         'Swimmer-v2': 1.0,
                         'Walker2d-v2': 1.0,
@@ -337,7 +337,7 @@ class GRAC(GRAC_base):
 			if critic_loss3 < init_critic_loss3 * bound:# and torch.max(loss3_max) < torch.max(loss3_max_init) * bound:
 				cond1 = 1
 				break   
-			if idi > self.max_iter_steps:
+			if idi >= self.max_iter_steps:
 				cond2 = 1
 				break
 			prev_prev_critic_loss3 = prev_critic_loss3.clone()
