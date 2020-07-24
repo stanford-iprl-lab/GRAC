@@ -118,7 +118,7 @@ class GRAC(GRAC_base):
 		ACTOR_LR  = {
                     'Ant-v2': 3e-4,
                     'Humanoid-v2': 3e-3,
-                    'HalfCheetah-v2': 1.5e-2, #1.9e-3#1e-3
+                    'HalfCheetah-v2': 2e-2, #1.9e-3#1e-3
                     'Hopper-v2': 1e-4,
                     'Swimmer-v2': 2e-4,
                     'Walker2d-v2': 2e-4,
@@ -139,7 +139,7 @@ class GRAC(GRAC_base):
 	
 		THIRD_LOSS_BOUND = {
                         'Ant-v2': 0.7,
-                         'Humanoid-v2': 0.85,
+                        'Humanoid-v2': 0.85,
                         'HalfCheetah-v2': 0.8,
                         'Hopper-v2': 0.85,
                         'Swimmer-v2': 0.5,
@@ -315,7 +315,8 @@ class GRAC(GRAC_base):
 		init_critic_loss3 = critic_loss3.clone()
 		ratio = 0.0
 		max_step = 0
-		writer.add_scalar('train_critic/third_violation_max_loss3_init',torch.max(loss3_max_init), self.total_it)
+		if log_it:
+			writer.add_scalar('train_critic/third_violation_max_loss3_init',torch.max(loss3_max_init), self.total_it)
 
 		idi = 0
 		cond1 = 0
@@ -342,12 +343,10 @@ class GRAC(GRAC_base):
 				break
 			prev_prev_critic_loss3 = prev_critic_loss3.clone()
 			prev_critic_loss3 = critic_loss3.clone()
-		writer.add_scalar('train_critic/third_loss_num', idi, self.total_it)
 		if log_it:
 			writer.add_scalar('train_critic/third_loss_cond1', cond1, self.total_it)
-			writer.add_scalar('train_critic/third_loss_cond2', cond2, self.total_it)
-
-		if log_it:
+			writer.add_scalar('train/third_loss_bound', bound, self.total_it)
+			writer.add_scalar('train_critic/third_loss_num', idi, self.total_it)
 			writer.add_scalar("losses/repeat_l1",critic_loss, self.total_it)
 			writer.add_scalar("losses/repeat_l3",critic_loss3, self.total_it)
 		if log_it:
