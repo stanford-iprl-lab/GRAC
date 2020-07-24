@@ -142,8 +142,6 @@ if __name__ == "__main__":
 	episode_timesteps = 0
 	episode_num = 0
 
-	reward_min = 0
-	reward_max = 0
 	# writer = utils.WriterLoggerWrapper(result_folder, comment=file_name, max_timesteps=args.max_timesteps)
 	writer = SummaryWriter(log_dir=result_folder, comment=file_name)
 
@@ -175,21 +173,8 @@ if __name__ == "__main__":
 		writer.add_scalar('test/reward', reward, t+1)
 		done_bool = float(done) if episode_timesteps < env._max_episode_steps else 0
 
-		if t < args.start_timesteps:
-			reward_min = min(reward, reward_min)
-			reward_max = max(reward, reward_max)
-
-		Reward_Scale  = {
-                    'Ant-v2': 1.0,
-                    'Humanoid-v2': 1.0,
-                    'HalfCheetah-v2': 1.0, #1.9e-3#1e-3
-                    'Hopper-v2': 1.0,
-                    'Swimmer-v2': 1.0,
-                    'Walker2d-v2': 1.0,
-		}
-		reward_scale =  Reward_Scale[args.env]
 		# Store data in replay buffer
-		replay_buffer.add(state, action, next_state, reward * reward_scale, done_bool)
+		replay_buffer.add(state, action, next_state, reward, done_bool)
 
 		state = next_state
 		episode_reward += reward
