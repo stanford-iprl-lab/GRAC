@@ -139,7 +139,7 @@ class GRAC(GRAC_base):
 	
 		THIRD_LOSS_BOUND = {
                         'Ant-v2': 0.7,
-                        'Humanoid-v2': 0.85,
+                         'Humanoid-v2': 0.85,
                         'HalfCheetah-v2': 0.8,
                         'Hopper-v2': 0.85,
                         'Swimmer-v2': 0.5,
@@ -171,7 +171,7 @@ class GRAC(GRAC_base):
                         'Ant-v2': 20,
                         'Humanoid-v2': 1,
                         'HalfCheetah-v2': 100,
-                        'Hopper-v2': 1,
+                        'Hopper-v2': 5,
                         'Swimmer-v2': 20,
                         'Walker2d-v2': 20,
 		}
