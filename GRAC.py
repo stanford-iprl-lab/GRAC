@@ -347,6 +347,8 @@ class GRAC(GRAC_base):
 			writer.add_scalar('train_critic/third_loss_cond1', cond1, self.total_it)
 			writer.add_scalar('train/third_loss_bound', bound, self.total_it)
 			writer.add_scalar('train_critic/third_loss_num', idi, self.total_it)
+			if self.total_it < 1000:
+				writer.add_scalar('train/actor_lr',self.actor_lr,self.total_it)
 			writer.add_scalar("losses/repeat_l1",critic_loss, self.total_it)
 			writer.add_scalar("losses/repeat_l3",critic_loss3, self.total_it)
 		if log_it:
