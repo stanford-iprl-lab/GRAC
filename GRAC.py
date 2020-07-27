@@ -117,7 +117,7 @@ class GRAC(GRAC_base):
 
 		ACTOR_LR  = {
                     'Ant-v2': 3e-4,
-                    'Humanoid-v2': 3e-2,
+                    'Humanoid-v2': 3e-4,
                     'HalfCheetah-v2': 1.5e-2, #1.9e-3#1e-3
                     'Hopper-v2': 1e-4,
                     'Swimmer-v2': 2e-4,
@@ -151,7 +151,7 @@ class GRAC(GRAC_base):
                         'Ant-v2': 0.85,
                         'Humanoid-v2': 0.9,
                         'HalfCheetah-v2': 0.9,
-                        'Hopper-v2': 0.95,
+                        'Hopper-v2': 0.99,
                         'Swimmer-v2': 0.75,
                         'Walker2d-v2': 0.95,
 		}
