@@ -119,7 +119,7 @@ class GRAC(GRAC_base):
                     'Ant-v2': 3e-4,
                     'Humanoid-v2': 3e-4,
                     'HalfCheetah-v2': 1.5e-2, #1.9e-3#1e-3
-                    'Hopper-v2': 1e-4,
+                    'Hopper-v2': 2e-4,
                     'Swimmer-v2': 2e-4,
                     'Walker2d-v2': 2e-4,
 		}
@@ -171,7 +171,7 @@ class GRAC(GRAC_base):
                         'Ant-v2': 20,
                         'Humanoid-v2': 1,
                         'HalfCheetah-v2': 100,
-                        'Hopper-v2': 5,
+                        'Hopper-v2': 3,
                         'Swimmer-v2': 20,
                         'Walker2d-v2': 20,
 		}
