@@ -1,8 +1,0 @@
-python main.py --policy GRAC --env Ant-v2 --which_cuda 0 --seed 0 --exp_name exp_ant2
-python main.py --policy GRAC --env Ant-v2 --which_cuda 0 --seed 1 --exp_name exp_ant2
-python main.py --policy GRAC --env Ant-v2 --which_cuda 0 --seed 2 --exp_name exp_ant2
-python main.py --policy GRAC --env Ant-v2 --which_cuda 0 --seed 3 --exp_name exp_ant2
-python main.py --policy GRAC --env Ant-v2 --which_cuda 0 --seed 4 --exp_name exp_ant2
-python main.py --policy GRAC --env Ant-v2 --which_cuda 0 --seed 5 --exp_name exp_ant2
-python main.py --policy GRAC --env Ant-v2 --which_cuda 0 --seed 6 --exp_name exp_ant2
-python main.py --policy GRAC --env Ant-v2 --which_cuda 0 --seed 7 --exp_name exp_ant2
