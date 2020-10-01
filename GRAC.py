@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from ES import Searcher
-from GRAC_base import GRAC_base
 from torch.distributions import Normal
 
 import matplotlib.pyplot as plt
@@ -94,7 +93,7 @@ class Critic(nn.Module):
 		return q2
 
 
-class GRAC(GRAC_base):
+class GRAC():
 	def __init__(
 		self,
 		env,
@@ -104,18 +103,21 @@ class GRAC(GRAC_base):
 		batch_size=256,
 		discount=0.99,
 		tau=0.005,
-		policy_noise=0.2,
-		noise_clip=0.5,
 		max_timesteps=3e6,
 		n_repeat=1,
                 actor_lr = 3e-4,
 		alpha_start=0.7,
                 alpha_end=0.9,
-		no_critic_cem=False,
 		device=torch.device('cuda'),
 	):
-		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, device)
+		self.action_dim = action_dim
+		self.state_dim = state_dim
+		self.max_action = max_action
+		self.discount = discount
+		self.tau = tau
+		self.total_it = 0
 
+		self.device = device
 		self.actor_lr = actor_lr # here is actor lr is not the real actor learning rate
 
 		self.actor = Actor(state_dim, action_dim, max_action).to(device)
