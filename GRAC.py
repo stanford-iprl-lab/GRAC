@@ -272,7 +272,6 @@ class GRAC(GRAC_base):
 				writer.add_scalar('train_critic/third_loss_num', idi, self.total_it)
 
 				writer.add_scalar('train_critic/critic_loss', critic_loss, self.total_it)
-				writer.add_scalar('losses/critic_loss2', critic_loss2, self.total_it)
 				writer.add_scalar('losses/critic_loss3', critic_loss3, self.total_it)
 	
 				target_Q1_Q2_diff = target_Q1 - target_Q2
