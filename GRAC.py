@@ -104,7 +104,7 @@ class GRAC():
 		discount=0.99,
 		tau=0.005,
 		max_timesteps=3e6,
-		n_repeat=1,
+		n_repeat=4,
                 actor_lr = 3e-4,
 		alpha_start=0.7,
                 alpha_end=0.9,
