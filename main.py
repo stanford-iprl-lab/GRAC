@@ -47,7 +47,6 @@ if __name__ == "__main__":
 	parser.add_argument("--tau", default=0.005)                     # Target network update rate
 	parser.add_argument("--policy_noise", default=0.2)              # Noise added to target policy during critic update
 	parser.add_argument("--noise_clip", default=0.5)                # Range to clip target policy noise
-	parser.add_argument("--policy_freq", default=2, type=int)       # Frequency of delayed policy updates
 	parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 	parser.add_argument('--n_repeat', default=20, type=int)
@@ -119,11 +118,6 @@ if __name__ == "__main__":
 	if "GRAC" in args.policy:
 		# Target policy smoothing is scaled wrt the action scale
 		kwargs["policy_noise"] = float(args.policy_noise) * max_action
-		kwargs["noise_clip"] = args.noise_clip * max_action
-		kwargs["policy_freq"] = args.policy_freq
-
-		if args.policy == 'TD3_adaptive_termination_v2_final':
-			kwargs['actor_cem_clip']=float(args.actor_cem_clip)
 		GRAC = __import__(args.policy)
 		policy = GRAC.GRAC(**kwargs)
 

@@ -106,24 +106,17 @@ class GRAC(GRAC_base):
 		tau=0.005,
 		policy_noise=0.2,
 		noise_clip=0.5,
-		policy_freq=2,
+		max_timesteps=3e6,
 		n_repeat=1,
+                actor_lr = 3e-4,
 		alpha_start=0.7,
-        alpha_end=0.85,
+                alpha_end=0.9,
 		no_critic_cem=False,
 		device=torch.device('cuda'),
 	):
-		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, noise_clip, policy_freq, device)
+		GRAC_base.__init__(self, state_dim, action_dim, max_action, batch_size, discount, tau, policy_noise, device)
 
-		ACTOR_LR  = {
-                    'Ant-v2': 3e-4,
-                    'Humanoid-v2': 3e-4,
-                    'HalfCheetah-v2': 1.5e-2, #1.9e-3#1e-3
-                    'Hopper-v2': 2e-4,
-                    'Swimmer-v2': 2e-4,
-                    'Walker2d-v2': 2e-4,
-		}
-		self.actor_lr =  ACTOR_LR[env]
+		self.actor_lr = actor_lr # here is actor lr is not the real actor learning rate
 
 		self.actor = Actor(state_dim, action_dim, max_action).to(device)
 		self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.actor_lr)
@@ -136,58 +129,13 @@ class GRAC(GRAC_base):
 		self.searcher = Searcher(action_dim, max_action, device=device, sigma_init=cem_sigma, clip=cem_clip, batch_size=batch_size)
 		self.action_dim = float(action_dim)
 		self.log_freq = 200
-	
-		THIRD_LOSS_BOUND = {
-                        'Ant-v2': 0.7,
-                        'Humanoid-v2': 0.85,
-                        'HalfCheetah-v2': 0.8,
-                        'Hopper-v2': 0.85,
-                        'Swimmer-v2': 0.5,
-                        'Walker2d-v2': 0.85,
-		}
-		self.third_loss_bound = THIRD_LOSS_BOUND[env]
+		self.third_loss_bound = alpha_start
+		self.third_loss_bound_end = alpha_end
+		self.max_timesteps = max_timesteps
 
-		THIRD_LOSS_BOUND_END = {
-                        'Ant-v2': 0.85,
-                        'Humanoid-v2': 0.9,
-                        'HalfCheetah-v2': 0.9,
-                        'Hopper-v2': 0.99,
-                        'Swimmer-v2': 0.75,
-                        'Walker2d-v2': 0.95,
-		}
-		self.third_loss_bound_end = THIRD_LOSS_BOUND_END[env]
-	
-		MAX_TIMESTEPS = {
-                        'Ant-v2': 3e6,
-                        'Humanoid-v2': 6e6,
-                        'HalfCheetah-v2': 6e6,
-                        'Hopper-v2': 1e6,
-                        'Swimmer-v2': 1e6,
-                        'Walker2d-v2': 1e6,
-		}
-		self.max_timesteps = MAX_TIMESTEPS[env]
-
-		MAX_ITER_STEPS = {
-                        'Ant-v2': 20,
-                        'Humanoid-v2': 1,
-                        'HalfCheetah-v2': 100,
-                        'Hopper-v2': 3,
-                        'Swimmer-v2': 20,
-                        'Walker2d-v2': 20,
-		}
-
-		self.max_iter_steps = MAX_ITER_STEPS[env]
+		self.max_iter_steps = n_repeat
 		self.cem_loss_coef = 1.0/float(self.action_dim)
-
-		SELECT_ACTION_COEF = {
-                        'Ant-v2': 1.0,
-                        'Humanoid-v2': 1.0,
-                        'HalfCheetah-v2': 1.0, #0.2
-                        'Hopper-v2': 1.0,
-                        'Swimmer-v2': 1.0,
-                        'Walker2d-v2': 1.0,
-		}
-		self.selection_action_coef = SELECT_ACTION_COEF[env]
+		self.selection_action_coef = 1.0
 
 
 	def select_action(self, state, writer=None, test=False):
