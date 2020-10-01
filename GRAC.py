@@ -164,11 +164,26 @@ class GRAC(GRAC_base):
 			return action.cpu().data.numpy().flatten()
 
 	def lr_scheduler(self, optimizer,lr):
-		return super().lr_scheduler(optimizer, lr)
-
+		for param_group in optimizer.param_groups:
+			param_group['lr'] = lr
+		return optimizer
 
 	def update_critic(self, critic_loss):
-		super().update_critic(critic_loss)
+		self.critic_optimizer.zero_grad()
+		critic_loss.backward()
+		self.critic_optimizer.step()
+
+	def save(self, filename):
+		torch.save(self.critic.state_dict(), filename + "_critic")
+		torch.save(self.critic_optimizer.state_dict(), filename + "_critic_optimizer")
+		torch.save(self.actor.state_dict(), filename + "_actor")
+		torch.save(self.actor_optimizer.state_dict(), filename + "_actor_optimizer")
+
+	def load(self, filename):
+		self.critic.load_state_dict(torch.load(filename + "_critic"))
+		self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer"))
+		self.actor.load_state_dict(torch.load(filename + "_actor"))
+		self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer"))
 
 	def train(self, replay_buffer, batch_size=100, writer=None, reward_range=20.0):
 		self.total_it += 1
@@ -298,7 +313,6 @@ class GRAC(GRAC_base):
 				#current_Q1
 				writer.add_scalar('train_critic/current_Q1/mean', current_Q1.mean(), self.total_it)
 				writer.add_scalar('train_critic/current_Q1/std', torch.std(current_Q1), self.total_it)
-				writer.add_scalar('train_critic/current_Q1_after/mean', torch.mean(after_current_Q1), self.total_it)
 				writer.add_scalar('train_critic/current_Q1/max', current_Q1.max(), self.total_it)
 				writer.add_scalar('train_critic/current_Q1/min', current_Q1.min(), self.total_it)
 	
