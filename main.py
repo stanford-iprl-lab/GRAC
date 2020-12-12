@@ -45,15 +45,12 @@ if __name__ == "__main__":
 	parser.add_argument("--batch_size", default=256, type=int)      # Batch size for both actor and critic
 	parser.add_argument("--discount", default=0.99)                 # Discount factor
 	parser.add_argument("--tau", default=0.005)                     # Target network update rate
-	parser.add_argument("--policy_noise", default=0.2)              # Noise added to target policy during critic update
 	parser.add_argument("--noise_clip", default=0.5)                # Range to clip target policy noise
 	parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 	parser.add_argument('--n_repeat', default=20, type=int)
 	parser.add_argument('--alpha_start', default=0.7,type=float)
 	parser.add_argument('--alpha_end', default=0.85,type=float)
-	parser.add_argument('--no_critic_cem', action="store_true")
-	parser.add_argument('--actor_cem_clip', default=0.5)
 	parser.add_argument('--use_expl_noise', action="store_true")
 
 	parser.add_argument("--debug", action="store_true")
@@ -110,21 +107,19 @@ if __name__ == "__main__":
 		"n_repeat": args.n_repeat,
 		"alpha_start": args.alpha_start,
 		"alpha_end":args.alpha_end,
-		"no_critic_cem": args.no_critic_cem,
 		"device": device,
 	}
 
 	# Initialize policy
 	if "GRAC" in args.policy:
 		# Target policy smoothing is scaled wrt the action scale
-		kwargs["policy_noise"] = float(args.policy_noise) * max_action
 		GRAC = __import__(args.policy)
 		policy = GRAC.GRAC(**kwargs)
 
 
 	if args.load_model != "":
 		policy_file = 'model' if args.load_model == "default" else args.load_model
-		policy.load(f"./{result_folder}/{policy_file}")
+		policy.load("./{}/{}".format(result_folder, policy_file))
 
 	replay_buffer = utils.ReplayBufferTorch(state_dim, action_dim, device=device)
 
