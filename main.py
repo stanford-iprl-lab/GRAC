@@ -8,28 +8,38 @@ import utils
 import datetime
 
 from torch.utils.tensorboard import SummaryWriter
-
+from sliding_window import SlidingMin 
+from RollerGrasperV2 import robot_env 
 
 # Runs policy for X episodes and returns average reward
 # A fixed seed is used for the eval environment
-def eval_policy(policy, env_name, seed, eval_episodes=10):
-	eval_env = gym.make(env_name)
-	eval_env.seed(seed + 100)
+def eval_policy(policy, env_name, seed, eval_episodes=10, args=None):
+
+	if env_name == 'RollerGrasperV2':
+		eval_env = robot_env.RobotEnv(args)
+	else:
+		eval_env = gym.make(env_name)
+		eval_env.seed(seed + 100)
 
 	avg_reward = 0.
+	avg_succ = 0.
 	for _ in range(eval_episodes):
 		state, done = eval_env.reset(), False
 		while not done:
 			action = policy.select_action(np.array(state), test=True)
-			state, reward, done, _ = eval_env.step(action)
+			state, reward, done, succ = eval_env.step(action)
 			avg_reward += reward
+
+			if type(succ) == float:
+				avg_succ += succ
 		
 	avg_reward /= eval_episodes
+	avg_succ /= eval_episodes
 
 	print("---------------------------------------")
-	print("Evaluation over {} episodes: {:.3f}".format(eval_episodes, avg_reward))
+	print("Evaluation over {} episodes: {:.3f} {:.3f}".format(eval_episodes, avg_reward, avg_succ))
 	print("---------------------------------------")
-	return avg_reward
+	return avg_reward, avg_succ
 
 
 if __name__ == "__main__":
@@ -48,10 +58,18 @@ if __name__ == "__main__":
 	parser.add_argument("--noise_clip", default=0.5)                # Range to clip target policy noise
 	parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
-	parser.add_argument('--n_repeat', default=20, type=int)
+	parser.add_argument('--n_repeat', default=10, type=int)
 	parser.add_argument('--alpha_start', default=0.7,type=float)
 	parser.add_argument('--alpha_end', default=0.85,type=float)
 	parser.add_argument('--use_expl_noise', action="store_true")
+	parser.add_argument('--no_adaptive_lr', action="store_true")
+	parser.add_argument('--adaptive_lr_weight', default=1, type=float)
+	parser.add_argument('--model_noise', default=0, type=float)
+
+
+	parser.add_argument('--linear_reward', action="store_true")
+	parser.add_argument('--expert_demo', action="store_true")
+
 
 	parser.add_argument("--debug", action="store_true")
 	parser.add_argument("--comment", default="")
@@ -66,7 +84,7 @@ if __name__ == "__main__":
 	file_name += "_{}".format(args.comment) if args.comment != "" else ""
 	folder_name = datetime.datetime.now().strftime('%b%d_%H-%M-%S_') + file_name
 	result_folder = 'runs/{}'.format(folder_name) 
-	if args.exp_name is not "":
+	if args.exp_name == "":
 		result_folder = '{}/{}'.format(args.exp_name, folder_name)
 	if args.debug: 
 		result_folder = 'debug/{}'.format(folder_name)
@@ -83,16 +101,28 @@ if __name__ == "__main__":
 	if args.save_model and not os.path.exists("./models"):
 		os.makedirs("./models")
 
-	env = gym.make(args.env)
+
 
 	# Set seeds
-	env.seed(args.seed)
 	torch.manual_seed(args.seed)
 	np.random.seed(args.seed)
 	
-	state_dim = env.observation_space.shape[0]
-	action_dim = env.action_space.shape[0] 
-	max_action = float(env.action_space.high[0])
+	if args.env == 'RollerGrasperV2':
+		env = robot_env.RobotEnv(args)
+		state_dim = env.state_dim
+		action_dim = env.action_dim
+		max_action = env.max_action
+		# env.reset(target_axis=np.array([0, 0, 1]))
+		# assert False
+
+		args.save_model = True
+		
+	else:
+		env = gym.make(args.env)
+		env.seed(args.seed)
+		state_dim = env.observation_space.shape[0]
+		action_dim = env.action_space.shape[0] 
+		max_action = float(env.action_space.high[0])
 
 	if args.save_model is False:
 		args.save_model = True
@@ -100,7 +130,7 @@ if __name__ == "__main__":
 		"env": args.env,
 		"state_dim": state_dim,
 		"action_dim": action_dim,
-		"max_action": max_action,
+		"max_action": torch.from_numpy(max_action).type(torch.FloatTensor).to(device) if args.env == 'RollerGrasperV2' else max_action,
 		"batch_size": args.batch_size,
 		"discount": args.discount,
 		"tau": args.tau,
@@ -109,9 +139,14 @@ if __name__ == "__main__":
 		"alpha_end":args.alpha_end,
 		"device": device,
 	}
-
+	if args.policy == 'GRAC_clipq':
+		kwargs["no_adaptive_lr"] = args.no_adaptive_lr
+		kwargs["adaptive_lr_weight"] = args.adaptive_lr_weight
+	if args.policy == 'GRAC_noise' or 'noise' in args.policy:
+		kwargs['model_noise'] = args.model_noise
+		
 	# Initialize policy
-	if "GRAC" in args.policy:
+	if "GRAC" in args.policy or 'TD3' in args.policy:
 		# Target policy smoothing is scaled wrt the action scale
 		GRAC = __import__(args.policy)
 		policy = GRAC.GRAC(**kwargs)
@@ -124,12 +159,21 @@ if __name__ == "__main__":
 	replay_buffer = utils.ReplayBufferTorch(state_dim, action_dim, device=device)
 
 	# Evaluate untrained policy
-	evaluations = [eval_policy(policy, args.env, args.seed)]
+	evaluations = [eval_policy(policy, args.env, args.seed, args=args)]
 
 	state, done = env.reset(), False
 	episode_reward = 0
 	episode_timesteps = 0
 	episode_num = 0
+
+	reward_max = 1.0
+	reward_min = np.inf
+	episode_step_max = 1
+	episode_step_min = 1000
+
+	reward_min_buffer = SlidingMin(int(1e5))
+	episode_step_min_buffer = SlidingMin(int(1e3))
+	episode_step_min_buffer.insert(1000)
 
 	# writer = utils.WriterLoggerWrapper(result_folder, comment=file_name, max_timesteps=args.max_timesteps)
 	writer = SummaryWriter(log_dir=result_folder, comment=file_name)
@@ -145,7 +189,10 @@ if __name__ == "__main__":
 
 		# Select action randomly or according to policy
 		if t < args.start_timesteps:
-			action = np.random.uniform(-max_action, max_action, action_dim)
+			if args.expert_demo:
+				action = env.get_expert_action()
+			else:
+				action = np.random.uniform(-max_action, max_action, action_dim)
 		else:
 			if args.use_expl_noise:
 				action = (
@@ -158,7 +205,12 @@ if __name__ == "__main__":
 				).clip(-max_action, max_action)
 
 		# Perform action
-		next_state, reward, done, _ = env.step(action) 
+		next_state, reward, done, _ = env.step(action)
+
+		if reward > reward_max:
+			reward_max = reward
+		reward_min_buffer.insert(reward)
+		 
 		writer.add_scalar('test/reward', reward, t+1)
 		done_bool = float(done) if episode_timesteps < env._max_episode_steps else 0
 
@@ -168,14 +220,26 @@ if __name__ == "__main__":
 		state = next_state
 		episode_reward += reward
 
-
+		reward_kwargs = {
+			'reward_max': reward_max, 
+			'episode_step_max': episode_step_max, 
+			'reward_min': reward_min_buffer.get_min(), 
+			'episode_step_min': episode_step_min_buffer.get_min()
+		}
 		# Train agent after collecting sufficient data
 		if t >= args.start_timesteps:
-			policy.train(replay_buffer, args.batch_size, writer, 20.0)#reward_max - reward_min)
+			if args.policy == 'GRAC_clipq' or 'GRAC_clipq' in args.policy:
+				policy.train(replay_buffer, args.batch_size, writer, 20.0, **reward_kwargs)
+			else:
+				policy.train(replay_buffer, args.batch_size, writer, 20.0)#reward_max - reward_min)
 
 		if done: 
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
 			print("Total T: {} Episode Num: {} Episode T: {} Reward: {:.3f}".format(t+1, episode_num+1, episode_timesteps, episode_reward))
+			if episode_timesteps > episode_step_max:
+				episode_step_max = episode_timesteps
+			episode_step_min_buffer.insert(episode_timesteps)
+
 			# Reset environment
 			state, done = env.reset(), False
 			episode_reward = 0
@@ -184,13 +248,16 @@ if __name__ == "__main__":
 
 		# Evaluate episode
 		if (t + 1) % args.eval_freq == 0:
-			evaluation = eval_policy(policy, args.env, args.seed)
+			evaluation, evaluation_succ = eval_policy(policy, args.env, args.seed, args=args)
 			evaluations.append(evaluation)
+			print('hello')
 			writer.add_scalar('test/avg_return', evaluation, t+1)
+			writer.add_scalar('test/avg_succ', evaluation_succ, t+1)
 			np.save("{}/evaluations".format(result_folder), evaluations)
 
-		#if (t + 1) % 5000 == 0: 
-	#		args.save_model: policy.save("./{}/models/iter_{}_model".format(result_folder, t + 1))
+		if (t + 1) % 50000 == 0: 
+			if args.save_model:
+				policy.save("./{}/models/iter_{}_model".format(result_folder, t + 1))
 			# replay_buffer.save(result_folder)
 		
 		# save to txt
