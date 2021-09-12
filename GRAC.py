@@ -105,9 +105,11 @@ class GRAC():
 		tau=0.005,
 		max_timesteps=3e6,
 		n_repeat=4,
-                actor_lr = 3e-4,
+		actor_lr = 3e-4,
 		alpha_start=0.7,
-                alpha_end=0.9,
+		alpha_end=0.9,
+		no_adaptive_lr=False,
+		adaptive_lr_weight=1,
 		device=torch.device('cuda'),
 	):
 		self.action_dim = action_dim
@@ -138,6 +140,9 @@ class GRAC():
 		self.max_iter_steps = n_repeat
 		self.cem_loss_coef = 1.0/float(self.action_dim)
 		self.selection_action_coef = 1.0
+
+		self.no_adaptive_lr = no_adaptive_lr
+		self.adaptive_lr_weight = adaptive_lr_weight
 
 
 	def select_action(self, state, writer=None, test=False):
@@ -187,13 +192,23 @@ class GRAC():
 		self.actor.load_state_dict(torch.load(filename + "_actor"))
 		self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer"))
 
-	def train(self, replay_buffer, batch_size=100, writer=None, reward_range=20.0):
+	def train(self, replay_buffer, batch_size=100, writer=None, reward_range=20.0, **reward_kwargs):
 		self.total_it += 1
 		log_it = (self.total_it % self.log_freq == 0)
 		# Sample replay buffer 
 		state, action, next_state, reward, not_done = replay_buffer.sample(batch_size)
 
 		with torch.no_grad():
+			reward_max = reward_kwargs['reward_max']
+			reward_min = reward_kwargs['reward_min']
+			episode_step_max = reward_kwargs['episode_step_max']
+			episode_step_min = reward_kwargs['episode_step_min']
+
+			Q_max = reward_max / (1 - self.discount) * (1 - self.discount ** int(episode_step_max))
+			if reward_min >= 0:
+				Q_min = reward_min / (1 - self.discount) * (1 - self.discount ** int(episode_step_min))
+			else:
+				Q_min = reward_min / (1 - self.discount) * (1 - self.discount ** int(episode_step_max))
 
 			# Select action according to policy and add clipped noise
 			next_action = (
@@ -202,14 +217,28 @@ class GRAC():
 			better_next_action = self.searcher.search(next_state, next_action, self.critic.Q2)
 
 			target_Q1, target_Q2 = self.critic(next_state, next_action)
+			target_Q1[target_Q1 > Q_max] = Q_max
+			target_Q1[target_Q1 < Q_min] = Q_min
+			target_Q2[target_Q2 > Q_max] = Q_max
+			target_Q2[target_Q2 < Q_min] = Q_min
+
 			target_Q = torch.min(target_Q1, target_Q2)
 
 			better_target_Q1, better_target_Q2 = self.critic(next_state, better_next_action)
+			better_target_Q1[better_target_Q1 > Q_max] = Q_max
+			better_target_Q1[better_target_Q1 < Q_min] = Q_min
+			better_target_Q2[better_target_Q2 > Q_max] = Q_max
+			better_target_Q2[better_target_Q2 < Q_min] = Q_min
+
 			better_target_Q = torch.min(better_target_Q1, better_target_Q2)
 
 			action_index = (target_Q > better_target_Q).squeeze()
 			better_next_action[action_index] = next_action[action_index]
 			better_target_Q1, better_target_Q2 = self.critic(next_state, better_next_action)
+			better_target_Q1[better_target_Q1 > Q_max] = Q_max
+			better_target_Q1[better_target_Q1 < Q_min] = Q_min
+			better_target_Q2[better_target_Q2 > Q_max] = Q_max
+			better_target_Q2[better_target_Q2 < Q_min] = Q_min
 
 			better_target_Q = torch.max(better_target_Q, target_Q)
 
@@ -257,8 +286,9 @@ class GRAC():
 		weights_actor_lr = critic_loss.detach()
 
 		if self.total_it % 1 == 0:
-			lr_tmp = self.actor_lr / (float(weights_actor_lr)+1.0)
-			self.actor_optimizer = self.lr_scheduler(self.actor_optimizer, lr_tmp)
+			if not self.no_adaptive_lr:
+				lr_tmp = self.actor_lr / (self.adaptive_lr_weight * (float(weights_actor_lr)+1.0))
+				self.actor_optimizer = self.lr_scheduler(self.actor_optimizer, lr_tmp)
 
 			# Compute actor loss
 			actor_action, log_prob, action_mean, action_sigma = self.actor.forward_all(state)
@@ -323,10 +353,18 @@ class GRAC():
 	
 
 	def save(self, filename):
-		super().save(filename)
+		torch.save(self.critic.state_dict(), filename + "_critic")
+		torch.save(self.critic_optimizer.state_dict(), filename + "_critic_optimizer")
+		
+		torch.save(self.actor.state_dict(), filename + "_actor")
+		torch.save(self.actor_optimizer.state_dict(), filename + "_actor_optimizer")
 
 	def load(self, filename):
-		super().load(filename)
+		self.critic.load_state_dict(torch.load(filename + "_critic"))
+		self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer"))
+
+		self.actor.load_state_dict(torch.load(filename + "_actor"))
+		self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer"))
 
 	def make_Q_contour(self, state, save_folder, base_action):
 		super().make_Q_contour(state, save_folder, base_action)

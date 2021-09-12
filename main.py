@@ -138,10 +138,9 @@ if __name__ == "__main__":
 		"alpha_start": args.alpha_start,
 		"alpha_end":args.alpha_end,
 		"device": device,
+		"no_adaptive_lr": args.no_adaptive_lr,
+		"adaptive_lr_weight": args.adaptive_lr_weight
 	}
-	if args.policy == 'GRAC_clipq':
-		kwargs["no_adaptive_lr"] = args.no_adaptive_lr
-		kwargs["adaptive_lr_weight"] = args.adaptive_lr_weight
 	if args.policy == 'GRAC_noise' or 'noise' in args.policy:
 		kwargs['model_noise'] = args.model_noise
 		
@@ -228,10 +227,8 @@ if __name__ == "__main__":
 		}
 		# Train agent after collecting sufficient data
 		if t >= args.start_timesteps:
-			if args.policy == 'GRAC_clipq' or 'GRAC_clipq' in args.policy:
-				policy.train(replay_buffer, args.batch_size, writer, 20.0, **reward_kwargs)
-			else:
-				policy.train(replay_buffer, args.batch_size, writer, 20.0)#reward_max - reward_min)
+			policy.train(replay_buffer, args.batch_size, writer, 20.0, **reward_kwargs)
+				# policy.train(replay_buffer, args.batch_size, writer, 20.0)#reward_max - reward_min)
 
 		if done: 
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
